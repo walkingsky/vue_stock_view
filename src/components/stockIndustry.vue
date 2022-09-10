@@ -1,0 +1,3 @@
+<template>
+    stockIndustry
+</template>
