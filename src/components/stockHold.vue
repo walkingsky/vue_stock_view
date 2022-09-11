@@ -1,15 +1,92 @@
 <template>
-    stockHold
-    <div id="myEchart" ref="myEchart" style="width: 200px;height:200px" ></div>
-    <a-table :dataSource="dataSource" :columns="columns" />
+    <div id="myEchart" ref="myEchart" style="width: 100%;height:450px" ></div>
+    <a-table 
+        :dataSource="dataSource" 
+        :columns="columns"
+        
+        :pagination="pagination"
+        :loading="loading"
+     />
+    
 </template>
 <script>
 import * as echarts from 'echarts';
+//import { reqGetHoldStocks } from '@/apis/stock';
+import { usePagination } from 'vue-request';
+import {computed} from 'vue';
+import axios from 'axios';
+
+const columns = [{
+        title: '证券名称',
+        dataIndex: 'name',
+        //sorter: true,
+    }, {
+        title: '证券代码',
+        dataIndex: 'code',
+    }, {
+        title: '当前数量',
+        dataIndex: 'num',
+        sorter: (a,b)=>a.num-b.num,
+    },{
+        title: '成本价',
+        dataIndex: 'costPrice',
+        sorter: (a,b)=>a.costPrice-b.costPrice,
+    },{
+        title: '市值价',
+        dataIndex: 'marketVule',
+        sorter: (a,b)=>a.marketVule-b.marketVule,
+    },{
+        title: '市场',
+        dataIndex: 'market',
+    }];
+const queryData = params => {
+    return axios.get('http://localhost:5000/apis/stock/hold', {
+        params,
+    });
+};
+
 export default {
+    setup(){ 
+        const {
+            data: dataSource,
+            run,
+            loading,
+            current,
+            pageSize,
+        } = usePagination(queryData, {
+            formatResult: res => res.data.results,
+            pagination: {
+                currentKey: 'page',
+                pageSizeKey: 'results',
+            },
+        });
+        const pagination = computed(() => ({
+            total: pageSize.value,
+            current: current.value,
+            pageSize: pageSize.value,
+        }));
+
+        const handleTableChange = (pag, filters, sorter) => {
+        run({
+            results: pag.pageSize,
+            page: pag?.current,
+            sortField: sorter.field,
+            sortOrder: sorter.order,
+            ...filters,
+        });
+        };      
+        return {
+            dataSource,
+            pagination,
+            loading,
+            columns,
+            handleTableChange,
+        };
+    },
     methods:{
         drawEtharts(){
             let myChart = echarts.init(document.getElementById("myEchart"));
-            let option = {
+            let option ={                
                 legend: {},
                 tooltip: {},
                 dataset: {
@@ -40,7 +117,12 @@ export default {
         },
     },
     mounted(){
-        this.drawEtharts();
+        this.drawEtharts();        
+    },
+    data(){
+        return{
+            //dataSource: this.getTableData(),
+        }
     }
     
 }
