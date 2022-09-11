@@ -6,6 +6,7 @@
         :loading="loading"
         @expand="expandCustomRow" 
         :expandedRowKeys="expandedRowKeys"
+        :customRow="clickRow"
      >
         <template #expandedRowRender>
             <a-table 
@@ -22,7 +23,7 @@
 <script>
 import * as echarts from 'echarts';
 //import { DownOutlined } from '@ant-design/icons-vue';
-import { reqGetHoldStocks ,reqGetStockHistory} from '@/apis/stock';
+import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode} from '@/apis/stock';
 //import { usePagination } from 'vue-request';
 //import axios from 'axios';
 
@@ -119,6 +120,17 @@ export  default ({
             this.innerLoading = false;
             this.innerData = res.data;
         },
+        /**
+         * 根据股票代码，获取股票的当天交易数据
+         * @params {code} 6位股票代码
+         * @params {market} 市场
+         */
+         async getStockData (code,market){
+            
+            const res = await reqGetStockByCode({code:code,market:market});
+            //console.log(res );
+            this.drawEtharts(res);
+        },
         expandCustomRow(expanded, record) {
             if (this.expandedRowKeys.length > 0) { //进这个判断说明当前已经有展开的了
             //返回某个指定的字符串值在字符串中首次出现的位置，下标为0
@@ -137,32 +149,168 @@ export  default ({
             if(expanded === true)
                 this.getInnerTableData(record.code,record.market);
         },
-        drawEtharts(){
+
+        /**
+         * 点击表格行，获取改行股票的当前的行情数据
+         */
+        clickRow(record,index){
+            return {
+                onClick:()=> {                   
+                    console.log(record);
+                    console.log(index);
+                    this.getStockData(record.code,record.market);
+                }
+            }
+        },
+        /**
+         * 绘制echarts 行情曲线图
+         */
+        drawEtharts(response){
+            let y_data_chigu=[];
+            let markPointData = [
+                {type:'max',name:'最高'},
+                {type:'min',name:'最低'}];
             let myChart = echarts.init(document.getElementById("myEchart"));
-            let option ={                
-                legend: {},
-                tooltip: {},
-                dataset: {
-                    dimensions: ['product', '业务类型', '额度占用情况', '缴纳情况'],
-                    source: [
-                        {product: '水果1', '业务类型': 43.3, '额度占用情况': 85.8, '缴纳情况': 93.7},
-                        {product: '水果2', '业务类型': 83.1, '额度占用情况': 73.4, '缴纳情况': 55.1},
-                        {product: '水果3', '业务类型': 86.4, '额度占用情况': 65.2, '缴纳情况': 82.5},
-                        {product: '水果4', '业务类型': 72.4, '额度占用情况': 53.9, '缴纳情况': 39.1},
-                        {product: '水果5', '业务类型': 43.3, '额度占用情况': 85.8, '缴纳情况': 93.7},
-                        {product: '水果6', '业务类型': 83.1, '额度占用情况': 73.4, '缴纳情况': 55.1},
-                        {product: '水果7', '业务类型': 86.4, '额度占用情况': 65.2, '缴纳情况': 82.5},
-                        {product: '水果8', '业务类型': 72.4, '额度占用情况': 53.9, '缴纳情况': 39.1}
-                    ]
+            var x_Axis=[],y_data=[],i=0,y_data_bili=[];
+            for ( var data in response.data){               
+                let temp_string = response.data[data][0];
+                //console.log(typeof(temp_string));
+                x_Axis.push(temp_string.substr(0, 2)+':'+temp_string.substr(2));                
+                y_data.push(response.data[data][1]);
+                y_data_bili.push(((response.data[data][1]-response.yestclose)/response.yestclose*100).toFixed(2));
+                i ++;						
+            }
+            while(i<242){
+                x_Axis.push("");
+                i++;
+            }
+            var colors = ['#5470C6', '#91CC75', '#EE6666'];
+            var option = {
+                title: {
+                    text: response.name
                 },
-                xAxis: {type: 'category'},
-                yAxis: {},
-                // Declare several bar series, each will be mapped
-                // to a column of dataset.source by default.
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                grid: [
+                    {
+                        left: '5%',
+                        right: '20%',
+                        //bottom: 20
+                    },
+                    {
+                        left: '85%',
+                        right: '5%',
+                        //height: 80,
+                        //bottom: 10
+                    }
+                ],
+                xAxis: [
+                    {
+                        data: x_Axis
+                    },
+                    {
+                        scale:true,
+                        //type:'value',
+                        gridIndex:1,
+                        //data:y_data_chigu
+                        data:['持有','买入','卖出']
+                        
+                    }
+                ],
+                legend:{
+                    data:['股价','浮动比','持股数量']
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: 'none'
+                        },
+                        magicType: {type: ['line', 'bar']},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },                
+                yAxis: [
+                    {
+                        type:'value',
+                        scale:true,
+                        name:"股价",
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: colors[0]
+                            }
+                        },
+                        axisLabel: {
+                            formatter: '{value} 元'
+                        }
+                    },
+                    {
+                        type:'value',
+                        scale:true,
+                        name:"浮动比",
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: colors[0]
+                            }
+                        },
+                        axisLabel: {
+                            formatter: '{value}%'
+                        }
+                    },
+                    {
+                        //type:'category',
+                        type:'value',								
+                        name:"持股数量",
+                        //offset: 60,
+                        gridIndex:1,
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: colors[0]
+                            }
+                        },
+                        
+                    }
+                ],
                 series: [
-                    {type: 'bar'},
-                    {type: 'bar'},
-                    {type: 'bar'}
+                    {
+                        name: '股价',
+                        smooth: 0.2,
+                        type: 'line',
+                        data: y_data,
+                        markLine:{
+                            data:[
+                                //{ type:"max",coord:[1,response.yestclose]  ,name:"昨日收盘"}
+                                { yAxis:response.yestclose  ,name:"昨日收盘"}
+                            ]
+                        },
+                        markPoint:{
+                            symbol: "pin",
+                            data:markPointData
+                        }
+                    },
+                    {
+                        name: '浮动比',								
+                        type: 'bar',
+                        yAxisIndex:1,
+                        xAxisIndex:0,
+                        data: y_data_bili								
+                    },
+                    {
+                        name: '持股数量',								
+                        type: 'bar',
+                        yAxisIndex:2,
+                        xAxisIndex:1,
+                        //data: ['持有','买入','卖出']	
+                        data:y_data_chigu							
+                    }
                 ]
             };
             // 使用刚指定的配置项和数据显示图表。
@@ -170,7 +318,7 @@ export  default ({
         },
     },
     mounted(){
-        this.drawEtharts();  
+        //this.drawEtharts();  
         this.getTableData();      
     },
     data(){
