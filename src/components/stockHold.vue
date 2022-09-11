@@ -1,20 +1,23 @@
 <template>
     <div id="myEchart" ref="myEchart" style="width: 100%;height:450px" ></div>
     <a-table 
-        :dataSource="dataSource" 
-        :columns="columns"
+        :data-source="data" 
+        :columns="columns"        
+        :loading="loading" 
+        @expand="expandCustomRow"       
+     >
+        <template #expandedRowRender>
         
-        :pagination="pagination"
-        :loading="loading"
-     />
+        </template>
+    </a-table>
     
 </template>
 <script>
 import * as echarts from 'echarts';
-//import { reqGetHoldStocks } from '@/apis/stock';
-import { usePagination } from 'vue-request';
-import {computed} from 'vue';
-import axios from 'axios';
+//import { DownOutlined } from '@ant-design/icons-vue';
+import { reqGetHoldStocks } from '@/apis/stock';
+//import { usePagination } from 'vue-request';
+//import axios from 'axios';
 
 const columns = [{
         title: '证券名称',
@@ -39,51 +42,53 @@ const columns = [{
         title: '市场',
         dataIndex: 'market',
     }];
-const queryData = params => {
-    return axios.get('http://localhost:5000/apis/stock/hold', {
-        params,
-    });
-};
 
-export default {
+const innerColumns =[
+    {
+        title: '日期',
+        dataIndex: 'date',
+    },
+    {
+        title: '时间',
+        dataIndex: 'time',
+    },
+    {
+        title: '买卖方向',
+        dataIndex: 'sellBye',
+    },
+    {
+        title: '交易价格',
+        dataIndex: 'price',
+    },
+    {
+        title: '成交量',
+        dataIndex: 'num',
+    },
+];
+
+export  default ({
+    components:{
+        //DownOutlined,
+    },
     setup(){ 
-        const {
-            data: dataSource,
-            run,
-            loading,
-            current,
-            pageSize,
-        } = usePagination(queryData, {
-            formatResult: res => res.data.results,
-            pagination: {
-                currentKey: 'page',
-                pageSizeKey: 'results',
-            },
-        });
-        const pagination = computed(() => ({
-            total: pageSize.value,
-            current: current.value,
-            pageSize: pageSize.value,
-        }));
-
-        const handleTableChange = (pag, filters, sorter) => {
-        run({
-            results: pag.pageSize,
-            page: pag?.current,
-            sortField: sorter.field,
-            sortOrder: sorter.order,
-            ...filters,
-        });
-        };      
-        return {
-            dataSource,
-            pagination,
-            loading,
-            columns,
-            handleTableChange,
+        
+        const expandCustomRow = (expanded, record) => {
+            console.log(expanded);
+            console.log(record);
+        }
+        
+        return {            
+            expandCustomRow,
         };
     },
     methods:{
+        async getTableData(){
+            this.loading = true;
+            const res = await reqGetHoldStocks();
+            //console.log(res.data);
+            this.data = res.data;
+            this.loading = false;
+        },
         drawEtharts(){
             let myChart = echarts.init(document.getElementById("myEchart"));
             let option ={                
@@ -117,14 +122,18 @@ export default {
         },
     },
     mounted(){
-        this.drawEtharts();        
+        this.drawEtharts();  
+        this.getTableData();      
     },
     data(){
         return{
-            //dataSource: this.getTableData(),
+            data: [],
+            columns,
+            innerColumns,
+            loading:false,
         }
     }
     
-}
+});
 </script>
 

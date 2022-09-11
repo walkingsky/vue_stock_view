@@ -135,7 +135,7 @@ class Request {
                                     Object.assign(
                                         {
                                             success: Number(response.data.code) === 200,
-                                            data: response.data.data,
+                                            data: response.data.results,
                                             msg: response.data.msg
                                         },
                                         response.data
@@ -191,6 +191,7 @@ class Request {
                 flag = true
                 break
             default:
+                flag = true
                 break
         }
 
