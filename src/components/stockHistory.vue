@@ -43,6 +43,15 @@ const columns = [{
 },{
     title: '市场',
     dataIndex: 'market',
+},{
+    title: '当前数量',
+    dataIndex: 'num',
+    sorter: (a,b)=>a.num-b.num,
+},{
+    title: '市值价',
+    dataIndex: 'price',
+    defaultSortOrder:'descend',
+    sorter: (a,b)=>a.price-b.price,
 }];
 
 const innerColumns =[
