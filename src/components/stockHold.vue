@@ -7,6 +7,7 @@
         @expand="expandCustomRow" 
         :expandedRowKeys="expandedRowKeys"
         :customRow="clickRow"
+        :scroll="{ y: 550 }"
      >
         <template #expandedRowRender>
             <a-table 
@@ -14,12 +15,22 @@
                 :data-source="innerData" 
                 :pagination="false"
                 :loading="innerLoading"
+                :scroll="{ y: 300 }"
+                :row-class-name="(_record, index) => (_record.sell_buy =='买入' ? 'table-buy' : 'table-sell')"
             >
             </a-table>        
         </template>
     </a-table>
     
 </template>
+<style scoped>
+    :deep(.table-buy) td {
+      background-color: #bcf9aa;
+    }
+    :deep(.table-sell) td {
+      background-color: #fab9b9;
+    }
+</style>
 <script>
 import * as echarts from 'echarts';
 //import { DownOutlined } from '@ant-design/icons-vue';
