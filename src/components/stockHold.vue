@@ -167,7 +167,7 @@ export  default ({
         clickRow(record,index){
             return {
                 onClick:()=> {                   
-                    console.log(record);
+                    //console.log(record);
                     console.log(index);
                     this.getStockData(record.code,record.market);
                 }

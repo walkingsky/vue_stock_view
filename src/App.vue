@@ -28,8 +28,6 @@
             </span>
           </template>
           <a-menu-item key="3">持仓基金</a-menu-item>
-          <a-menu-item key="5">Bill</a-menu-item>
-          <a-menu-item key="6">Alex</a-menu-item>
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
