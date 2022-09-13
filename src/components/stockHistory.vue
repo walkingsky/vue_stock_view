@@ -1,13 +1,64 @@
 <template>
     <a-table 
+        class="ant-table-my" 
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
-        :pagination="false"
+        :pagination=false
         @expand="expandCustomRow" 
         :expandedRowKeys="expandedRowKeys"
         :scroll="{ y:`calc(100vh - 130px)` }"
      >
+    <!--
+        套用自定义样式，压缩行高
+        bug:子表的上下会和主表重叠一部分
+    -->
+        <template #customFilterDropdown="{ setSelectedKeys, selectedKeys, confirm, clearFilters, column }">
+            <div style="padding: 8px">
+                <a-input
+                    ref="searchInput"
+                    :placeholder="`Search ${column.dataIndex}`"
+                    :value="selectedKeys[0]"
+                    style="width: 188px; margin-bottom: 8px; display: block"
+                    @change="e => setSelectedKeys(e.target.value ? [e.target.value] : [])"
+                    @pressEnter="handleSearch(selectedKeys, confirm, column.dataIndex)"
+                />
+                <a-button
+                    type="primary"
+                    size="small"
+                    style="width: 90px; margin-right: 8px"
+                    @click="handleSearch(selectedKeys, confirm, column.dataIndex)"
+                >
+                    <template #icon><SearchOutlined /></template>
+                    查找
+                </a-button>
+                <a-button size="small" style="width: 90px" @click="handleReset(clearFilters)">
+                    复位
+                </a-button>
+            </div>
+        </template>
+        <template #customFilterIcon="{ filtered }">
+            <search-outlined :style="{ color: filtered ? '#108ee9' : undefined }" />
+        </template>
+        <template #bodyCell="{ text, column }">
+            <span v-if="searchText && searchedColumn === column.dataIndex">
+                <template
+                v-for="(fragment, i) in text
+                    .toString()
+                    .split(new RegExp(`(?<=${searchText})|(?=${searchText})`, 'i'))"
+                >
+                    <mark
+                        v-if="fragment.toLowerCase() === searchText.toLowerCase()"
+                        :key="i"
+                        class="highlight"
+                    >
+                    {{ fragment }}
+                    </mark>
+                <template v-else>{{ fragment }}</template>
+                </template>
+            </span>
+        </template>
+
         <template #expandedRowRender>
             <a-table 
                 :columns="innerColumns" 
@@ -32,27 +83,10 @@
 </style>
 <script>
 import { reqGetHoldStocks ,reqGetStockHistory} from '@/apis/stock';
+import { SearchOutlined } from '@ant-design/icons-vue';
+import { reactive, ref, toRefs } from 'vue';
 
-const columns = [{
-    title: '证券名称',
-    dataIndex: 'name',
-    //sorter: true,
-}, {
-    title: '证券代码',
-    dataIndex: 'code',
-},{
-    title: '市场',
-    dataIndex: 'market',
-},{
-    title: '当前数量',
-    dataIndex: 'num',
-    sorter: (a,b)=>a.num-b.num,
-},{
-    title: '市值价',
-    dataIndex: 'price',
-    defaultSortOrder:'descend',
-    sorter: (a,b)=>a.price-b.price,
-}];
+
 
 const innerColumns =[
 {
@@ -91,7 +125,74 @@ const innerColumns =[
 ];
 
 export  default ({
-   
+    components: {
+        SearchOutlined,
+    },
+    setup(){
+        const state = reactive({
+            searchText: '',
+            searchedColumn: '',
+        });
+        const columns = [{
+            title: '证券名称',
+            dataIndex: 'name',
+            //sorter: true,
+            customFilterDropdown: true,
+            onFilter: (value, record) => record.name.toString().toLowerCase().includes(value.toLowerCase()),
+            onFilterDropdownVisibleChange: visible => {
+                if (visible) {
+                setTimeout(() => {
+                    searchInput.value.focus();
+                }, 100);
+                }
+            },
+        }, {
+            title: '证券代码',
+            dataIndex: 'code',
+            customFilterDropdown: true,
+            onFilter: (value, record) => record.name.toString().toLowerCase().includes(value.toLowerCase()),
+            onFilterDropdownVisibleChange: visible => {
+                if (visible) {
+                setTimeout(() => {
+                    searchInput.value.focus();
+                }, 100);
+                }
+            },
+        },{
+            title: '市场',
+            dataIndex: 'market',
+        },{
+            title: '当前数量',
+            dataIndex: 'num',
+            sorter: (a,b)=>a.num-b.num,
+        },{
+            title: '市值价',
+            dataIndex: 'price',
+            defaultSortOrder:'descend',
+            sorter: (a,b)=>a.price-b.price,
+        }];
+        const searchInput = ref();
+        const handleSearch = (selectedKeys, confirm, dataIndex) => {
+            confirm();
+            state.searchText = selectedKeys[0];
+            state.searchedColumn = dataIndex;
+        };
+
+        const handleReset = clearFilters => {
+            clearFilters({
+                confirm: true,
+            });
+            state.searchText = '';
+        };
+        return {
+            //data,
+            columns,
+            handleSearch,
+            handleReset,
+            searchInput,
+            ...toRefs(state),
+        };
+    },
     methods:{
         /**
          * 获取表格数据
@@ -143,7 +244,7 @@ export  default ({
         return{
             data: [],
             innerData:[],
-            columns,
+            //columns,
             innerColumns,
             loading:false,
             innerLoading:false,
@@ -153,3 +254,13 @@ export  default ({
     
 });
 </script>
+
+<style scoped>
+    .highlight {
+      background-color: rgb(255, 192, 105);
+      padding: 0px;
+    }
+    .ant-table-my :deep( .ant-table-tbody > tr > td ) {
+        padding: 6px 2px;
+    }
+</style>

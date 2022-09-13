@@ -1,6 +1,7 @@
 <template>
     <div id="myEchart" ref="myEchart" style="width: 100%;height:450px" ></div>
-    <a-table 
+    <a-table
+        class="ant-table-my" 
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -8,9 +9,11 @@
         :expandedRowKeys="expandedRowKeys"
         :customRow="clickRow"
         :scroll="{ y: 550 }"
+        :pagination="false"
      >
         <template #expandedRowRender>
             <a-table 
+                class="ant-table-sub"
                 :columns="innerColumns" 
                 :data-source="innerData" 
                 :pagination="false"
@@ -20,6 +23,14 @@
             >
             </a-table>        
         </template>
+        <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'action'">
+            <span>
+                <a-typography-link @click.stop="showHistory(record)">历史行情</a-typography-link>
+            <a-divider type="vertical" />
+            </span>
+      </template>
+        </template>        
     </a-table>
     
 </template>
@@ -34,7 +45,7 @@
 <script>
 import * as echarts from 'echarts';
 //import { DownOutlined } from '@ant-design/icons-vue';
-import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode} from '@/apis/stock';
+import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode,reqGetStockDataHistory} from '@/apis/stock';
 //import { usePagination } from 'vue-request';
 //import axios from 'axios';
 
@@ -61,6 +72,9 @@ const columns = [{
     },{
         title: '市场',
         dataIndex: 'market',
+    },{
+        title: '操作',
+        key: 'action',
     }];
 
 const innerColumns =[
@@ -132,7 +146,7 @@ export  default ({
             this.innerData = res.data;
         },
         /**
-         * 根据股票代码，获取股票的当天交易数据
+         * 
          * @params {code} 6位股票代码
          * @params {market} 市场
          */
@@ -140,8 +154,22 @@ export  default ({
             
             const res = await reqGetStockByCode({code:code,market:market});
             //console.log(res );
-            this.drawEtharts(res);
+            this.drawEcharts(res);
         },
+        /**
+         * 获取股票历史行情
+         */
+        async showHistory(record){
+            const res = await reqGetStockDataHistory({code:record.code,market:record.market});
+            const res2 = await reqGetStockHistory({code:record.code,market:record.market});
+            //console.log(res);
+            this.drawEchartsHistory(res,res2.results);
+        },
+        /**
+         * 展开一个节点，关闭其他展开节点
+         * @param {*} expanded 
+         * @param {*} record 
+         */
         expandCustomRow(expanded, record) {
             if (this.expandedRowKeys.length > 0) { //进这个判断说明当前已经有展开的了
             //返回某个指定的字符串值在字符串中首次出现的位置，下标为0
@@ -160,7 +188,6 @@ export  default ({
             if(expanded === true)
                 this.getInnerTableData(record.code,record.market);
         },
-
         /**
          * 点击表格行，获取改行股票的当前的行情数据
          */
@@ -176,7 +203,7 @@ export  default ({
         /**
          * 绘制echarts 行情曲线图
          */
-        drawEtharts(response){
+        drawEcharts(response){
             let y_data_chigu=[];
             let markPointData = [
                 {type:'max',name:'最高'},
@@ -327,6 +354,339 @@ export  default ({
             // 使用刚指定的配置项和数据显示图表。
             myChart.setOption(option);
         },
+
+        calculateMA(dayCount, data) {
+            var result = [];
+            for (var i = 0, len = data.values.length; i < len; i++) {
+                if (i < dayCount) {
+                    result.push('-');
+                    continue;
+                }
+                var sum = 0;
+                for (var j = 0; j < dayCount; j++) {
+                    sum += data.values[i - j][1];
+                }
+                result.push(+(sum / dayCount).toFixed(3));
+            }
+            return result;
+        },
+        /**
+         * 绘制股票历史行情曲线图
+         */
+        drawEchartsHistory(response,rawData){
+            const upColor = '#ec0000';
+            const upBorderColor = '#8A0000';
+            const downColor = '#00da3c';
+            const downBorderColor = '#008F28';
+
+            //console.log(response);
+            let categoryData = [];
+            let values = [];
+            let volumes = [];
+            let buy = [];
+            let sell = [];
+            let position = [];
+            let pointmark = [];
+            var position_his = 0;
+            for (var item in response.data.klines) {
+                //console.log(response.data.klines[item]);
+                var datas = response.data.klines[item].split(',');
+                //console.log(datas);
+                categoryData.push(datas[0]);
+                //var jiaoyi = false;
+                var buy_num = 0;
+                var sell_num = 0;
+                var position_num = 0;
+
+                for (var i in rawData) {
+                    if (rawData[i].date == datas[0]) {
+
+                        if (rawData[i].sell_buy == '买入') {
+                            buy_num += rawData[i].num;
+                            //position_his += buy_num;
+                        } else {
+                            sell_num += rawData[i].num;
+                            //position_his -= sell_num;
+                        }
+                        //console.log(rawData[i].sell_buy);
+                    }
+                    pointmark.push({
+                        name: 'Mark',
+                        coord: [rawData[i].date, rawData[i].price],
+                        value: rawData[i].num,
+                        itemStyle: {
+                            color: rawData[i].sell_buy == '买入' ? 'rgb(41,60,85)' : 'rgb(220,10,10)'
+                        }
+                    });
+                }
+                position_his = position_his + buy_num + sell_num;
+                if (position_his < 0)
+                    position_his = 0;                
+                position_num = position_his;
+
+                buy.push([parseInt(item), buy_num, 1]);
+                sell.push([parseInt(item), sell_num, -1]);
+                position.push([parseInt(item), position_num]);
+
+                values.push([parseFloat(datas[1]), parseFloat(datas[2]), parseFloat(datas[3]), parseFloat(datas[4])]);
+                volumes.push(datas[0]);
+
+            }
+
+            var data = {
+                categoryData,
+                values,
+                volumes,
+                buy: buy,
+                sell: sell,
+                position: position
+            }
+            var option = {
+                title: {
+                    text: response.name
+                },
+                animation: false,
+                legend: {
+                    bottom: 10,
+                    left: 'center',
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30']
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    padding: 10,
+                    textStyle: {
+                        color: '#000'
+                    },
+                    position: function (pos, params, el, elRect, size) {
+                        const obj = {
+                            top: 10
+                        };
+                        obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                        return obj;
+                    }
+                    // extraCssText: 'width: 170px'
+                },
+                axisPointer: {
+                    link: [
+                        {
+                            xAxisIndex: 'all'
+                        }
+                    ],
+                    label: {
+                        backgroundColor: '#777'
+                    }
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: false
+                        },
+                        brush: {
+                            type: ['lineX', 'clear']
+                        }
+                    }
+                },
+                brush: {
+                    xAxisIndex: 'all',
+                    brushLink: 'all',
+                    outOfBrush: {
+                        colorAlpha: 0.1
+                    }
+                },
+                visualMap: {
+                    show: false,
+                    seriesIndex: 5,
+                    dimension: 2,
+                    pieces: [
+                        {
+                            value: 1,
+                            color: downColor
+                        },
+                        {
+                            value: -1,
+                            color: upColor
+                        }
+                    ]
+                },
+                grid: [
+                    {
+                        left: '10%',
+                        right: '8%',
+                        height: '50%'
+                    },
+                    {
+                        left: '10%',
+                        right: '8%',
+                        top: '63%',
+                        height: '16%'
+                    }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: data.categoryData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        splitLine: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax',
+                        axisPointer: {
+                            z: 100
+                        }
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: data.categoryData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    }
+                ],
+                yAxis: [
+                    {
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 95,
+                        end: 100
+                    },
+                    {
+                        show: true,
+                        xAxisIndex: [0, 1],
+                        type: 'slider',
+                        top: '85%',
+                        start: 95,
+                        end: 100
+                    }
+                ],
+                series: [
+                    {
+                        name: 'K值数据',
+                        type: 'candlestick',
+                        data: data.values,
+                        itemStyle: {
+                            color: upColor,
+                            color0: downColor,
+                            borderColor: upBorderColor,
+                            borderColor0: downBorderColor
+                        },
+                        tooltip: {
+                            show: true,
+                            formatter: function (param) {
+                                console.log(param);
+                                param = param[0];
+                                var param_ =
+                                    [
+                                        'Date: ' + param.name + '<hr size=1 style="margin: 3px 0">',
+                                        '开盘: ' + param.data[0] + '<br/>',
+                                        '收盘: ' + param.data[1] + '<br/>',
+                                        '最低: ' + param.data[2] + '<br/>',
+                                        '最高: ' + param.data[3] + '<br/>'
+                                    ].join('');
+                                console.info(param_);
+                                return param_;
+                            }
+                        },
+                        //dimensions: [ '日期','开盘', '收盘', '最高', '最低'],
+                        markPoint: {
+
+                            //data: pointmark
+                        }
+
+                    },
+                    {
+                        name: 'MA5',
+                        type: 'line',
+                        data: this.calculateMA(5, data),
+                        smooth: false,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA10',
+                        type: 'line',
+                        data: this.calculateMA(10, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA20',
+                        type: 'line',
+                        data: this.calculateMA(20, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA30',
+                        type: 'line',
+                        data: this.calculateMA(30, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: '买入',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: data.buy
+                    },
+
+                    {
+                        name: '卖出',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: data.sell
+                    },
+                    {
+                        name: '持仓',
+                        type: 'line',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: data.position
+                    }
+                ]
+            };
+            //console.log(option);
+            echarts.dispose(document.getElementById('myEchart'));
+            var myChart = echarts.init(document.getElementById('myEchart'));
+            myChart.setOption(option);
+        },
     },
     mounted(){
         //this.drawEtharts();  
@@ -346,4 +706,12 @@ export  default ({
     
 });
 </script>
+<style scoped>
+.ant-table-my :deep( .ant-table-tbody > tr > td ) {
+    padding: 6px 2px;
+}
+.ant-table-sub :deep( .ant-table-tbody > tr > td ) {
+    padding: 6px 8px;
+}
+</style>
 

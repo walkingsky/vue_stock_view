@@ -9,3 +9,4 @@ export const reqUserList = params => { return http.get('/user/list', params) }
 export const reqGetHoldStocks = params => { return http.get('/stock/hold', params) }
 export const reqGetStockHistory = params => { return http.get('/stock/history', params) }
 export const reqGetStockByCode = params => { return http.get('/stock', params) }
+export const reqGetStockDataHistory = params => { return http.get('/stock/historydata', params) }
