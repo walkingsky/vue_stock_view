@@ -17,7 +17,8 @@
           </template>
           <a-menu-item key="0">持仓股票</a-menu-item>
           <a-menu-item key="1">历史持仓股票</a-menu-item>
-          <a-menu-item key="2">行业分析</a-menu-item>
+          <a-menu-item key="2">行业排名分析</a-menu-item>
+          <a-menu-item key="3">行业行情分析</a-menu-item>
         </a-sub-menu>
         
         <a-sub-menu key="sub2">
@@ -27,7 +28,7 @@
               <span>基金</span>
             </span>
           </template>
-          <a-menu-item key="3">持仓基金</a-menu-item>
+          <a-menu-item key="4">持仓基金</a-menu-item>
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
@@ -54,6 +55,7 @@ import { defineComponent, ref } from 'vue';
 import fundHold from './components/fundHold.vue';
 import stockHold from './components/stockHold.vue';
 import stockHistory from './components/stockHistory.vue';
+import stockIndustryInfo from './components/stockIndustryInfo.vue';
 import stockIndustry from './components/stockIndustry.vue';
 export default defineComponent({
   components: {
@@ -63,6 +65,7 @@ export default defineComponent({
     stockHold,
     stockHistory,
     stockIndustry,
+    stockIndustryInfo,
   },
 
   data() {
@@ -71,7 +74,7 @@ export default defineComponent({
       openKey: ref(['sub1']),
       selectedKey: ref(['0']), 
       currentMain:  'stockHold',
-      mainComponents:['stockHold','stockHistory','stockIndustry','fundHold']   
+      mainComponents:['stockHold','stockHistory','stockIndustry','stockIndustryInfo','fundHold']   
     };
   },
   methods: {

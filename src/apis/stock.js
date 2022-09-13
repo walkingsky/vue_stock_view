@@ -12,3 +12,4 @@ export const reqGetStockByCode = params => { return http.get('/stock', params) }
 export const reqGetStockDataHistory = params => { return http.get('/stock/historydata', params) }
 export const reqGetIndustryData = params => { return http.get('/industry', params) }
 export const reqGetIndustryInfoData = params => { return http.get('/industry/info', params) }
+export const reqGetIndustryHistoryData = params => { return http.get('/industry/history', params) }

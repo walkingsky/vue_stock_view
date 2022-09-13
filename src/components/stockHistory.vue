@@ -7,7 +7,7 @@
         :pagination=false
         @expand="expandCustomRow" 
         :expandedRowKeys="expandedRowKeys"
-        :scroll="{ y:`calc(100vh - 130px)` }"
+        :scroll="{ y:` calc(100vh - 130px) ` }"
      >
     <!--
         套用自定义样式，压缩行高
