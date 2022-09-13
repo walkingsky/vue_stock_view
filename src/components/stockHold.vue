@@ -443,7 +443,7 @@ export  default ({
             }
             var option = {
                 title: {
-                    text: response.name
+                    text: response.data.name,
                 },
                 animation: false,
                 legend: {
