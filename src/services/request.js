@@ -170,22 +170,7 @@ class Request {
         let result = ''
         let flag = false
         switch (code) {
-            case '20007':
-                result = '未查找到二次认证密码！'
-                flag = true
-                break
-            case '20008':
-                result = '您的二次认证密码还未修改，请先修改！'
-                flag = true
-                break
-            case '20009':
-                result = '您还未开启二次认证，请联系管理员！'
-                flag = true
-                break
-            case '90001':
-                result = '请输入二次认证密码！'
-                flag = true
-                break
+
             case '90002':
                 result = '无操作权限！'
                 flag = true
