@@ -45,7 +45,7 @@
 <script>
 import * as echarts from 'echarts';
 //import { DownOutlined } from '@ant-design/icons-vue';
-import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode,reqGetStockDataHistory} from '@/apis/stock';
+import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
 //import { usePagination } from 'vue-request';
 //import axios from 'axios';
 
@@ -146,15 +146,26 @@ export  default ({
             this.innerData = res.data;
         },
         /**
-         * 
+         * 126 实时数据
          * @params {code} 6位股票代码
          * @params {market} 市场
          */
-         async getStockData (code,market){
+         async getStockData126 (code,market){
             
             const res = await reqGetStockByCode({code:code,market:market});
             //console.log(res );
             this.drawEcharts(res);
+        },
+        /**
+         * 东财实时数据
+         * @params {code} 6位股票代码
+         * @params {market} 市场
+         */
+         async getStockDataEast (code,market){
+            
+            const res = await reqGetStockByCodeEast({code:code,market:market});
+            //console.log(res );
+            this.drawEchartsEast(res.data);
         },
         /**
          * 获取股票历史行情
@@ -191,23 +202,24 @@ export  default ({
         /**
          * 点击表格行，获取改行股票的当前的行情数据
          */
-        clickRow(record,index){
+        clickRow(record){
             return {
                 onClick:()=> {                   
                     //console.log(record);
-                    console.log(index);
-                    this.getStockData(record.code,record.market);
+                    //this.getStockData126(record.code,record.market);
+                    this.getStockDataEast(record.code,record.market);
                 }
             }
         },
         /**
-         * 绘制echarts 行情曲线图
+         * 绘制echarts 行情曲线图,126数据
          */
         drawEcharts(response){
             let y_data_chigu=[];
             let markPointData = [
                 {type:'max',name:'最高'},
                 {type:'min',name:'最低'}];
+            echarts.dispose(document.getElementById('myEchart'));
             let myChart = echarts.init(document.getElementById("myEchart"));
             var x_Axis=[],y_data=[],i=0,y_data_bili=[];
             for ( var data in response.data){               
@@ -348,6 +360,152 @@ export  default ({
                         xAxisIndex:1,
                         //data: ['持有','买入','卖出']	
                         data:y_data_chigu							
+                    }
+                ]
+            };
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option);
+        },
+
+        /**
+         * 绘制echarts 行情曲线图,东财数据
+         */
+         drawEchartsEast(response){
+            let markPointData = [
+                {type:'max',name:'最高'},
+                {type:'min',name:'最低'}];
+            echarts.dispose(document.getElementById('myEchart'));
+            let myChart = echarts.init(document.getElementById("myEchart"));
+            var x_Axis=[],y_data=[],i=0,y_data_bili=[],volumes=[];
+            for ( var data in response.trends){               
+                let datas = response.trends[data].split(',');
+                //console.log(typeof(temp_string));
+                x_Axis.push(datas[0]);                
+                y_data.push(datas[2]);
+                y_data_bili.push(((datas[2]-response.preClose)/response.preClose*100).toFixed(2));
+                volumes.push([i, datas[5], datas[1] > datas[2] ? 1 : -1]);
+                i ++;						
+            }
+            while(i<242){
+                x_Axis.push("");
+                i++;
+            }
+            var colors = ['#5470C6', '#91CC75', '#EE6666'];
+            var option = {
+                title: {
+                    text: response.name
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                grid: [
+                    {
+                        left: '10%',
+                        right: '8%',
+                        height: '65%'
+                    },
+                    {
+                        left: '10%',
+                        right: '8%',
+                        top: '80%',
+                        height: '16%'
+                    }
+                ],
+                xAxis: [
+                    {
+                        data: x_Axis
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: x_Axis,                        
+                    }
+                ],
+                legend:{
+                    data:['股价','浮动比','交易量']
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: 'none'
+                        },
+                        magicType: {type: ['line', 'bar']},
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },                
+                yAxis: [
+                    {
+                        type:'value',
+                        scale:true,
+                        name:"股价",
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: colors[0]
+                            }
+                        },
+                        axisLabel: {
+                            formatter: '{value} 元'
+                        }
+                    },
+                    {
+                        type:'value',
+                        scale:true,
+                        name:"浮动比",
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: colors[0]
+                            }
+                        },
+                        axisLabel: {
+                            formatter: '{value}%'
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        name:"交易量",
+                        axisLine:false,                        
+                    }
+                ],
+                series: [
+                    {
+                        name: '股价',
+                        smooth: 0.2,
+                        type: 'line',
+                        data: y_data,
+                        markLine:{
+                            data:[
+                                //{ type:"max",coord:[1,response.yestclose]  ,name:"昨日收盘"}
+                                { yAxis:response.preClose  ,name:"昨日收盘"}
+                            ]
+                        },
+                        markPoint:{
+                            symbol: "pin",
+                            data:markPointData
+                        }
+                    },
+                    {
+                        name: '浮动比',								
+                        type: 'bar',
+                        yAxisIndex:1,
+                        xAxisIndex:0,
+                        data: y_data_bili,                        
+                        //formatter: '{value}%' 								
+                    },
+                    {
+                        name: '交易量',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 2,
+                        data: volumes,
                     }
                 ]
             };
@@ -601,7 +759,6 @@ export  default ({
                         tooltip: {
                             show: true,
                             formatter: function (param) {
-                                console.log(param);
                                 param = param[0];
                                 var param_ =
                                     [
@@ -611,7 +768,6 @@ export  default ({
                                         '最低: ' + param.data[2] + '<br/>',
                                         '最高: ' + param.data[3] + '<br/>'
                                     ].join('');
-                                console.info(param_);
                                 return param_;
                             }
                         },
