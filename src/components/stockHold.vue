@@ -1,5 +1,6 @@
 <template>
-    <div id="myEchart" ref="myEchart" style="width: 100%;height:450px" ></div>
+    <div id="timeChart" ref="timeChart" style="width: 100%;height:450px" v-if="showTimeChart"></div>
+    <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>
     <a-table
         class="ant-table-my" 
         :data-source="data" 
@@ -26,13 +27,13 @@
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
             <span>
-                <a-typography-link @click.stop="showHistory(record)">历史行情</a-typography-link>
+                <a-typography-link @click.stop="showHistory(record,true)">历史行情</a-typography-link>
             <a-divider type="vertical" />
+                <a-typography-link @click.stop="this.showKChart = false">关闭历史行情</a-typography-link>
             </span>
       </template>
         </template>        
-    </a-table>
-    
+    </a-table>    
 </template>
 <style scoped>
     :deep(.table-buy) td {
@@ -44,7 +45,6 @@
 </style>
 <script>
 import * as echarts from 'echarts';
-//import { DownOutlined } from '@ant-design/icons-vue';
 import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
 //import { usePagination } from 'vue-request';
 //import axios from 'axios';
@@ -163,14 +163,20 @@ export  default ({
          */
          async getStockDataEast (code,market){
             
+            this.showTimeChart = true;
             const res = await reqGetStockByCodeEast({code:code,market:market});
-            //console.log(res );
+            //console.log(res );            
             this.drawEchartsEast(res.data);
+            if(this.showKChart)
+                this.showHistory({code:code,market:market},false);
         },
         /**
          * 获取股票历史行情
          */
-        async showHistory(record){
+        async showHistory(record,refreshTimeChart=false){
+            if (refreshTimeChart == true)
+                this.getStockDataEast(record.code,record.market);
+            this.showKChart = true;            
             const res = await reqGetStockDataHistory({code:record.code,market:record.market});
             const res2 = await reqGetStockHistory({code:record.code,market:record.market});
             //console.log(res);
@@ -219,8 +225,8 @@ export  default ({
             let markPointData = [
                 {type:'max',name:'最高'},
                 {type:'min',name:'最低'}];
-            echarts.dispose(document.getElementById('myEchart'));
-            let myChart = echarts.init(document.getElementById("myEchart"));
+            echarts.dispose(document.getElementById('timeChart'));
+            let myChart = echarts.init(document.getElementById("timeChart"));
             var x_Axis=[],y_data=[],i=0,y_data_bili=[];
             for ( var data in response.data){               
                 let temp_string = response.data[data][0];
@@ -374,8 +380,8 @@ export  default ({
             let markPointData = [
                 {type:'max',name:'最高'},
                 {type:'min',name:'最低'}];
-            echarts.dispose(document.getElementById('myEchart'));
-            let myChart = echarts.init(document.getElementById("myEchart"));
+            echarts.dispose(document.getElementById('timeChart'));
+            let myChart = echarts.init(document.getElementById("timeChart"));
             var x_Axis=[],y_data=[],i=0,y_data_bili=[],volumes=[];
             for ( var data in response.trends){               
                 let datas = response.trends[data].split(',');
@@ -839,8 +845,8 @@ export  default ({
                 ]
             };
             //console.log(option);
-            echarts.dispose(document.getElementById('myEchart'));
-            var myChart = echarts.init(document.getElementById('myEchart'));
+            echarts.dispose(document.getElementById('kChart'));
+            var myChart = echarts.init(document.getElementById('kChart'));
             myChart.setOption(option);
         },
     },
@@ -857,6 +863,8 @@ export  default ({
             loading:false,
             innerLoading:false,
             expandedRowKeys:[],
+            showTimeChart:false,
+            showKChart:false,
         }
     }
     
