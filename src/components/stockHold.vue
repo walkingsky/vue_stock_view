@@ -118,10 +118,11 @@ export  default ({
         //DownOutlined,
     },
     setup(){
-               
-        return {            
-            
+        return { 
         };
+    },
+    beforeUnmount(){
+        clearInterval(this.timer);
     },
     methods:{
         /**
@@ -161,13 +162,13 @@ export  default ({
          * @params {code} 6位股票代码
          * @params {market} 市场
          */
-         async getStockDataEast (code,market){
+         async getStockDataEast (code,market,refrashKChart){
             
             this.showTimeChart = true;
             const res = await reqGetStockByCodeEast({code:code,market:market});
             //console.log(res );            
             this.drawEchartsEast(res.data);
-            if(this.showKChart)
+            if(this.showKChart && refrashKChart === true)
                 this.showHistory({code:code,market:market},false);
         },
         /**
@@ -175,7 +176,7 @@ export  default ({
          */
         async showHistory(record,refreshTimeChart=false){
             if (refreshTimeChart == true)
-                this.getStockDataEast(record.code,record.market);
+                this.getStockDataEast(record.code,record.market,true);
             this.showKChart = true;            
             const res = await reqGetStockDataHistory({code:record.code,market:record.market});
             const res2 = await reqGetStockHistory({code:record.code,market:record.market});
@@ -213,7 +214,9 @@ export  default ({
                 onClick:()=> {                   
                     //console.log(record);
                     //this.getStockData126(record.code,record.market);
-                    this.getStockDataEast(record.code,record.market);
+                    this.getStockDataEast(record.code,record.market,true);
+                    this.currentCode = record.code;
+                    this.currentMarket = record.market;
                 }
             }
         },
@@ -401,6 +404,7 @@ export  default ({
                 title: {
                     text: response.name
                 },
+                animation:false,
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
@@ -592,7 +596,7 @@ export  default ({
                 sell.push([parseInt(item), sell_num, -1]);
                 position.push([parseInt(item), position_num]);
 
-                values.push([parseFloat(datas[1]), parseFloat(datas[2]), parseFloat(datas[3]), parseFloat(datas[4])]);
+                values.push([parseFloat(datas[1]), parseFloat(datas[2]), parseFloat(datas[4]), parseFloat(datas[3])]);
                 volumes.push(datas[0]);
 
             }
@@ -633,7 +637,6 @@ export  default ({
                         obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
                         return obj;
                     }
-                    // extraCssText: 'width: 170px'
                 },
                 axisPointer: {
                     link: [
@@ -762,27 +765,6 @@ export  default ({
                             borderColor: upBorderColor,
                             borderColor0: downBorderColor
                         },
-                        tooltip: {
-                            show: true,
-                            formatter: function (param) {
-                                param = param[0];
-                                var param_ =
-                                    [
-                                        'Date: ' + param.name + '<hr size=1 style="margin: 3px 0">',
-                                        '开盘: ' + param.data[0] + '<br/>',
-                                        '收盘: ' + param.data[1] + '<br/>',
-                                        '最低: ' + param.data[2] + '<br/>',
-                                        '最高: ' + param.data[3] + '<br/>'
-                                    ].join('');
-                                return param_;
-                            }
-                        },
-                        //dimensions: [ '日期','开盘', '收盘', '最高', '最低'],
-                        markPoint: {
-
-                            //data: pointmark
-                        }
-
                     },
                     {
                         name: 'MA5',
@@ -852,7 +834,13 @@ export  default ({
     },
     mounted(){
         //this.drawEtharts();  
-        this.getTableData();      
+        this.getTableData(); 
+        this.timer = setInterval(()=>{
+            if(this.showTimeChart === true && this.currentCode != '' && this.currentMarket !='')
+            {
+                this.getStockDataEast(this.currentCode,this.currentMarket,false);
+            }                
+        },10000);     
     },
     data(){
         return{
@@ -865,6 +853,9 @@ export  default ({
             expandedRowKeys:[],
             showTimeChart:false,
             showKChart:false,
+            currentCode:'',
+            currentMarket:'',
+            timer:null,
         }
     }
     
