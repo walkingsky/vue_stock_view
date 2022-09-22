@@ -1,50 +1,52 @@
 <template>
-  <a-layout style="min-height: 100vh">
-    <a-layout-sider v-model:collapsed="collapsed" collapsible>      
-      <a-menu 
-        theme="dark" 
-        v-model:selectedKeys="selectedKey" 
-        v-model:openKeys="openKey" 
-        mode="inline"
-        @select="menuSelect"
-      >
-        <a-sub-menu key="sub1">
-          <template #title>
-            <span>
-              <SlidersOutlined />
-              <span>股票</span>
-            </span>
-          </template>
-          <a-menu-item key="0">持仓股票</a-menu-item>
-          <a-menu-item key="1">历史持仓股票</a-menu-item>
-          <a-menu-item key="2">行业排名分析</a-menu-item>
-          <a-menu-item key="3">行业行情分析</a-menu-item>
-        </a-sub-menu>
-        
-        <a-sub-menu key="sub2">
-          <template #title>
-            <span>
-              <PieChartOutlined />
-              <span>基金</span>
-            </span>
-          </template>
-          <a-menu-item key="4">持仓基金</a-menu-item>
-        </a-sub-menu>
-      </a-menu>
-    </a-layout-sider>
-    <a-layout>
-      <!--
-      <a-layout-header style="background: #fff; padding: 0" />
-      -->
-      <a-layout-content style="margin: 0 16px">
-        
-        <component :is="currentMain"></component>
-      </a-layout-content>
-      <a-layout-footer style="text-align: center">
-        Ant Design ©2018 Created by Ant UED
-      </a-layout-footer>
+  <a-config-provider :locale="locale">
+    <a-layout style="min-height: 100vh">
+      <a-layout-sider v-model:collapsed="collapsed" collapsible>      
+        <a-menu 
+          theme="dark" 
+          v-model:selectedKeys="selectedKey" 
+          v-model:openKeys="openKey" 
+          mode="inline"
+          @select="menuSelect"
+        >
+          <a-sub-menu key="sub1">
+            <template #title>
+              <span>
+                <SlidersOutlined />
+                <span>股票</span>
+              </span>
+            </template>
+            <a-menu-item key="0">持仓股票</a-menu-item>
+            <a-menu-item key="1">历史持仓股票</a-menu-item>
+            <a-menu-item key="2">行业排名分析</a-menu-item>
+            <a-menu-item key="3">行业行情分析</a-menu-item>
+          </a-sub-menu>
+          
+          <a-sub-menu key="sub2">
+            <template #title>
+              <span>
+                <PieChartOutlined />
+                <span>基金</span>
+              </span>
+            </template>
+            <a-menu-item key="4">持仓基金</a-menu-item>
+          </a-sub-menu>
+        </a-menu>
+      </a-layout-sider>
+      <a-layout>
+        <!--
+        <a-layout-header style="background: #fff; padding: 0" />
+        -->
+        <a-layout-content style="margin: 0 16px">
+          
+          <component :is="currentMain"></component>
+        </a-layout-content>
+        <a-layout-footer style="text-align: center">
+          Ant Design ©2018 Created by Ant UED
+        </a-layout-footer>
+      </a-layout>
     </a-layout>
-  </a-layout>
+  </a-config-provider>
 </template>
 <script>
 import {
@@ -52,11 +54,14 @@ import {
   PieChartOutlined,
 } from '@ant-design/icons-vue';
 import { defineComponent, ref } from 'vue';
+import zhCN from 'ant-design-vue/es/locale/zh_CN';
+
 import fundHold from './components/fundHold.vue';
 import stockHold from './components/stockHold.vue';
 import stockHistory from './components/stockHistory.vue';
 import stockIndustryInfo from './components/stockIndustryInfo.vue';
 import stockIndustry from './components/stockIndustry.vue';
+
 export default defineComponent({
   components: {
     SlidersOutlined,
@@ -74,7 +79,8 @@ export default defineComponent({
       openKey: ref(['sub1']),
       selectedKey: ref(['0']), 
       currentMain:  'stockHold',
-      mainComponents:['stockHold','stockHistory','stockIndustry','stockIndustryInfo','fundHold']   
+      mainComponents:['stockHold','stockHistory','stockIndustry','stockIndustryInfo','fundHold'],
+      locale:zhCN,   
     };
   },
   methods: {

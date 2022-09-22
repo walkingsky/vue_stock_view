@@ -26,12 +26,12 @@
         </template>
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
-            <span>
-                <a-typography-link @click.stop="showHistory(record,true)">历史行情</a-typography-link>
-            <a-divider type="vertical" />
-                <a-typography-link @click.stop="this.showKChart = false">关闭历史行情</a-typography-link>
-            </span>
-      </template>
+                <span>
+                    <a-typography-link @click.stop="showHistory(record,true)">历史行情</a-typography-link>
+                <a-divider type="vertical" />
+                    <a-typography-link @click.stop="this.showKChart = false">关闭历史行情</a-typography-link>
+                </span>
+            </template>
         </template>        
     </a-table>    
 </template>
@@ -176,7 +176,12 @@ export  default ({
          */
         async showHistory(record,refreshTimeChart=false){
             if (refreshTimeChart == true)
+            {
                 this.getStockDataEast(record.code,record.market,true);
+                this.currentCode = record.code;
+                this.currentMarket = record.market;
+            }
+                
             this.showKChart = true;            
             const res = await reqGetStockDataHistory({code:record.code,market:record.market});
             const res2 = await reqGetStockHistory({code:record.code,market:record.market});

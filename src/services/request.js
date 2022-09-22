@@ -59,7 +59,10 @@ class Request {
         } else {
             data = { ...body }
         }
-        return this._request('post')(url, headers)(url, data)
+        if (headers)
+            return this._request('post')(url, headers)(url, data)
+        else
+            return this._request('post')(url, data)
     }
     put(url, body = {}) {
         return this._request('put')(url, {
