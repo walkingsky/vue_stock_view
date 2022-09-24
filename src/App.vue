@@ -30,6 +30,7 @@
               </span>
             </template>
             <a-menu-item key="4">持仓基金</a-menu-item>
+            <a-menu-item key="5">交易记录</a-menu-item>
           </a-sub-menu>
         </a-menu>
       </a-layout-sider>
@@ -61,12 +62,14 @@ import stockHold from './components/stockHold.vue';
 import stockHistory from './components/stockHistory.vue';
 import stockIndustryInfo from './components/stockIndustryInfo.vue';
 import stockIndustry from './components/stockIndustry.vue';
+import fundTrades from './components/fundTrades.vue';
 
 export default defineComponent({
   components: {
     SlidersOutlined,
     PieChartOutlined,
     fundHold,
+    fundTrades,
     stockHold,
     stockHistory,
     stockIndustry,
@@ -76,10 +79,10 @@ export default defineComponent({
   data() {
     return {
       collapsed: ref(false),
-      openKey: ref(['sub1']),
+      openKey: ref(['sub1','sub2']),
       selectedKey: ref(['0']), 
       currentMain:  'stockHold',
-      mainComponents:['stockHold','stockHistory','stockIndustry','stockIndustryInfo','fundHold'],
+      mainComponents:['stockHold','stockHistory','stockIndustry','stockIndustryInfo','fundHold','fundTrades'],
       locale:zhCN,   
     };
   },

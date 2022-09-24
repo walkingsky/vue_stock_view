@@ -130,7 +130,7 @@ export  default ({
          */
         async getTableData(){
             this.loading = true;
-            const res = await reqGetHoldStocks();
+            const res = await reqGetHoldStocks({history:'0'});
             //console.log(res.data);
             this.data = res.data;
             this.loading = false;
