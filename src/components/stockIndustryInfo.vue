@@ -8,7 +8,7 @@
         </a-radio-group>
     </a-space>
     <a-table 
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -28,9 +28,6 @@
     </a-table>
 </template>
 <style scoped>
-    .ant-table-my :deep( .ant-table-tbody > tr > td ) {
-        padding: 6px 16px;
-    }
 </style>
 <script>
 import { reqGetIndustryData,reqGetIndustryHistoryData} from '@/apis/stock';

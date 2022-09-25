@@ -3,7 +3,7 @@
         <a-button type="primary" @click="handleAdd">添加交易记录</a-button>
     </a-space>
     <a-table
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import {reqFundSuggest,reqFundAdd,reqFundGetAll,reqFundGetById, reqFundModify,reqFundDelById} from '@/apis/fund';
+import {reqFundSuggest,reqFundTradeAdd,reqFundTradeGetAll,reqFundTradeGetById, reqFundTradeModify,reqFundTradeDelById} from '@/apis/fund';
 import { message } from 'ant-design-vue';
 import { cloneDeep } from 'lodash-es';
 import dayjs from 'dayjs';
@@ -195,10 +195,10 @@ export default {
         async getRecord(id){
             this.loading = true;
             if (id == undefined){
-                let res = await reqFundGetAll();
+                let res = await reqFundTradeGetAll();
                 this.data = res.data;
             }else{
-                let res = await reqFundGetById(id);
+                let res = await reqFundTradeGetById(id);
                 console.log(res);
             }
             this.loading = false;
@@ -235,9 +235,9 @@ export default {
             };
             console.log(recordData);
             if(this.data.filter(item => record.id === item.id)[0].new === true)
-                var res = await reqFundAdd(recordData);
+                var res = await reqFundTradeAdd(recordData);
             else
-                res = await reqFundModify(recordData);
+                res = await reqFundTradeModify(recordData);
             if(res.success === true)
             {
                 message.success('保存成功');
@@ -253,7 +253,7 @@ export default {
             this.currentId = null;
         },
         async onDelete(id){
-            let res = await reqFundDelById({id:id});
+            let res = await reqFundTradeDelById({id:id});
             if(res.success === true)
             {
                 this.getRecord();
@@ -323,8 +323,6 @@ export default {
 </script>
 
 <style scoped>
-.ant-table-my :deep( .ant-table-tbody > tr > td ) {
-    padding: 6px 2px;
-}
+
 </style>
 

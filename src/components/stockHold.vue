@@ -2,7 +2,7 @@
     <div id="timeChart" ref="timeChart" style="width: 100%;height:450px" v-if="showTimeChart"></div>
     <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>
     <a-table
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -14,7 +14,7 @@
      >
         <template #expandedRowRender>
             <a-table 
-                class="ant-table-sub"
+                size="small"
                 :columns="innerColumns" 
                 :data-source="innerData" 
                 :pagination="false"
@@ -866,12 +866,5 @@ export  default ({
     
 });
 </script>
-<style scoped>
-.ant-table-my :deep( .ant-table-tbody > tr > td ) {
-    padding: 6px 2px;
-}
-.ant-table-sub :deep( .ant-table-tbody > tr > td ) {
-    padding: 6px 8px;
-}
-</style>
+
 

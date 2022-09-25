@@ -6,9 +6,13 @@ import http from '../services/request'
  */
 
 export const reqFundSuggest = params => { return http.get('/fund/search', params) }
-export const reqFundAdd = params => { return http.post('/fund/add', params) }
-export const reqFundGetAll = () => { return http.get('/fund/getall') }
-export const reqFundModify = params => { return http.put('/fund/modify', params) }
-export const reqFundGetById = params => { return http.get('/fund/get', params) }
-
-export const reqFundDelById = params => { return http.delete('/fund/del', params) }
+//基金交易记录的接口
+export const reqFundTradeAdd = params => { return http.post('/fund/trade/add', params) }
+export const reqFundTradeGetAll = () => { return http.get('/fund/trade/getall') }
+export const reqFundTradeModify = params => { return http.put('/fund/trade/modify', params) }
+export const reqFundTradeGetById = params => { return http.get('/fund/trade/get', params) }
+export const reqFundTradeDelById = params => { return http.delete('/fund/trade/del', params) }
+//基金持仓记录接口
+export const reqFundHoldGetAll = () => { return http.get('/fund/hold/getall') }
+export const reqFundGz = params => { return http.get('/fund/hold/gz', params) }
+export const reqFundLsjz = params => { return http.get('/fund/hold/lsjz', params) }
