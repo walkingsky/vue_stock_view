@@ -11,6 +11,7 @@ export const reqFundTradeAdd = params => { return http.post('/fund/trade/add', p
 export const reqFundTradeGetAll = () => { return http.get('/fund/trade/getall') }
 export const reqFundTradeModify = params => { return http.put('/fund/trade/modify', params) }
 export const reqFundTradeGetById = params => { return http.get('/fund/trade/get', params) }
+export const reqFundTradeGetByICode = params => { return http.get('/fund/trade/getbycode', params) }
 export const reqFundTradeDelById = params => { return http.delete('/fund/trade/del', params) }
 //基金持仓记录接口
 export const reqFundHoldGetAll = () => { return http.get('/fund/hold/getall') }

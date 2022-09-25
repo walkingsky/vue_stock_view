@@ -22,10 +22,11 @@
   </a-table>
 </template>
 <script>
-  import {reqFundHoldGetAll,reqFundGz,reqFundLsjz} from '@/apis/fund';
+  import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundTradeGetByICode} from '@/apis/fund';
   import * as echarts from 'echarts';
 
   const columns = [
+    /*
     {
         title: 'id',
         dataIndex: 'id',
@@ -33,7 +34,8 @@
         defaultSortOrder:'ascend',
         width:60,
         key:'id',
-    },{
+    },*/
+    {
         title: '基金名称',
         dataIndex: 'name',
         width:280,
@@ -118,10 +120,17 @@
           }
         }
       },
-      drawEcharts(response,name){
+      drawEcharts(response,name,his){
           let markPointData = [
               {type:'max',name:'最高'},
               {type:'min',name:'最低'}];
+          for(let po in his){
+            if (his[po].type == '卖出' || his[po].type == '转出'){
+              markPointData.push({  value: his[po].type +':'+ his[po].shares, xAxis: his[po].tradedate, yAxis: his[po].nav,itemStyle: {color:'#ff6611'} })
+            }else if(his[po].type == '买入' || his[po].type == '转入'){
+              markPointData.push({  value: his[po].type +':'+ his[po].shares, xAxis: his[po].tradedate, yAxis: his[po].nav,itemStyle: {color:'#66ff11'} })
+            }
+          }
           echarts.dispose(document.getElementById('timeChart'));
           let myChart = echarts.init(document.getElementById("timeChart"));
           var x_Axis=[],y_data=[];
@@ -152,7 +161,8 @@
               ],
               xAxis: [
                   {
-                      data: x_Axis
+                      data: x_Axis,
+                      inverse:true
                   }
               ],
               legend:{
@@ -183,6 +193,7 @@
                       data: y_data,
                       markPoint:{
                           symbol: "pin",
+                          symbolsise:30,
                           data:markPointData
                       }
                   }
@@ -194,8 +205,9 @@
       async showHistory(record){
         this.showChart = true;
         this.windowHeight =  document.documentElement.clientHeight - 160 -450;
-        var res = await reqFundLsjz({code:record.code,size:50});
-        this.drawEcharts(res,record.name);
+        var res = await reqFundLsjz({code:record.code,size:300});
+        var his = await reqFundTradeGetByICode({code:record.code});
+        this.drawEcharts(res,record.name,his.data);
 
       },
       closeHistory(){
