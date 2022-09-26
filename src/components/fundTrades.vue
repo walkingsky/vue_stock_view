@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import {reqFundSuggest,reqFundTradeAdd,reqFundTradeGetAll,reqFundTradeGetById, reqFundTradeModify,reqFundTradeDelById} from '@/apis/fund';
+import {reqFundSuggest,reqFundTradeAdd,reqFundTradeGetAll, reqFundTradeModify,reqFundTradeDelById} from '@/apis/fund';
 import { message } from 'ant-design-vue';
 import { cloneDeep } from 'lodash-es';
 import dayjs from 'dayjs';
@@ -192,14 +192,12 @@ export default {
 
     },    
     methods:{
-        async getRecord(id){
+        async getRecord(){
             this.loading = true;
-            if (id == undefined){
-                let res = await reqFundTradeGetAll();
-                this.data = res.data;
-            }else{
-                let res = await reqFundTradeGetById(id);
-            }
+           
+            let res = await reqFundTradeGetAll();
+            this.data = res.data;
+            
             this.loading = false;
         },
         clickRow(record){

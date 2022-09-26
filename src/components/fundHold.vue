@@ -1,24 +1,20 @@
 <template>
   <div id="timeChart" ref="timeChart" style="width: 100%;height:450px" v-if="showChart"></div>
+  <a-space align="end">
+    <a-button @click="closeHistory()">关闭历史行情</a-button>    
+  </a-space>
   <a-table
     size="small"
+    :row-selection="rowSelection"
+    :rowKey="(record)=>{return record.code}" 
     :data-source="data" 
+    :custom-row="customRow"
     :columns="columns"        
     :loading="loading"
     :scroll="{ y: windowHeight }"
     :pagination="false"
     :row-class-name="(_record) => (_record.gzzf <= 0 ? 'row-green':'row-red')"
-  >
-  
-  <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'action'">
-          <span>
-              <a-typography-link @click.stop="showHistory(record)">历史行情</a-typography-link>
-          <a-divider type="vertical" />
-              <a-typography-link @click.stop="closeHistory()">关闭历史行情</a-typography-link>
-          </span>
-      </template>
-  </template>        
+  >      
   </a-table>
 </template>
 <script>
@@ -68,11 +64,7 @@
                 return text.text + '%'
             }
         },
-    },{
-        title: '操作',
-        dataIndex: 'op',
-        key:'action',
-    }];
+    }]
   
   export default {
     setup(){
@@ -81,6 +73,9 @@
       }
     },
     methods:{
+      /**
+       * 获取持仓记录数据
+       */
       async getRecord(){
             this.loading = true;            
             let res = await reqFundHoldGetAll();
@@ -88,6 +83,9 @@
             this.loading = false;
             this.getFundsGz();
       },
+      /**
+       * 获取所有基金估值
+       */
       async getFundsGz(){
         var codes = '';
         for(var da in this.data){         
@@ -107,6 +105,12 @@
           }
         }
       },
+      /**
+       * 绘制echart
+       * @param {*} response ，数据
+       * @param {*} name ，图表名称
+       * @param {*} his ，历史买入卖出的数据记录
+       */
       drawEcharts(response,name,his){
           let markPointData = [
               {type:'max',name:'最高'},
@@ -188,6 +192,10 @@
           // 使用刚指定的配置项和数据显示图表。
           myChart.setOption(option);
       },
+      /**
+       * 展示历史曲线图
+       * @param {*} record 
+       */
       async showHistory(record){
         this.showChart = true;
         this.windowHeight =  document.documentElement.clientHeight - 160 -450;
@@ -196,10 +204,37 @@
         this.drawEcharts(res,record.name,his.data);
 
       },
+      /**
+       * 关闭历史曲线图
+       */
       closeHistory(){
         this.showChart = false;
         this.windowHeight =  document.documentElement.clientHeight - 160 ;
       }, 
+      /**
+       * 自定义的行点击事件
+       * @param {*} record 
+       */
+      customRow(record){
+        return{
+          onClick:()=>{
+            this.selectedRowKeys[0] = record.code;
+            this.showHistory(record);
+          }          
+        }
+      },
+    },
+    computed:{
+      rowSelection(){
+        return {
+          selectedRowKeys: this.selectedRowKeys,
+          onChange: (selectedRowKeys) => {                       
+            this.selectedRowKeys = selectedRowKeys; 
+            this.showHistory({code:selectedRowKeys[0]});           
+          },
+          type:'radio',
+        };
+      },
     },
     mounted(){
         this.getRecord();
@@ -220,6 +255,7 @@
         timer:null,
         showChart:false,
         windowHeight: document.documentElement.clientHeight - 160 -(this.showChart===true?450:0),
+        selectedRowKeys:[],
       }
     }
 
