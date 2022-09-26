@@ -201,7 +201,6 @@ export  default ({
         async getTableData(){
             this.loading = true;
             const res = await reqGetHoldStocks({history:'1'});
-            console.log(res);
             this.data = res.data;
             this.loading = false;
         },

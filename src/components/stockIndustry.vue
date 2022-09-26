@@ -24,23 +24,10 @@
       setup() {
         const loading = ref(false);  
         const kind = ref('fluctuate');
-        const sort = ref('asc');  
-
-        const selectKind = ()=>{
-            console.log(kind.value);
-        }
-        const enterIconLoading = () =>{
-            
-        }
-        const selectSort = () =>{
-            console.log(sort.value);
-        }
+        const sort = ref('asc'); 
     
         return {
           loading,
-          enterIconLoading,
-          selectKind,
-          selectSort,
           kind,
           sort,
         };
@@ -49,22 +36,17 @@
         sortData(data,sort){
             var i,j;
             if(sort == 'asc'){
-                //pz=20 可调返回数据量
-                //console.log(data[19].value);
                 for( i in data){
                     data[i].value[0] = data[i].value[0] - data[data.length - 1].value[0]  ;
-                    //data[i].max = Math.abs(data[i].value[0])>Math.abs( data[data.length - 1].value[0])?Math.abs(data[i].value[0]):Math.abs( data[data.length - 1].value[0]);
+                    
                     if (data[i].value[1] >0){
                         data[i].value[2] = 1; 
-                        //data[i].color = ['#942e38'];
                         data[i].itemStyle = {"borderColor": '#CC3333'};
                     }else if(data[i].value[1] <0){
                         data[i].value[2] = -1;
-                        //data[i].color = ['#269f3c'];
                         data[i].itemStyle = {"borderColor":  '#339933'};
                     }else{
                         data[i].value[2] = 0;
-                        //data[i].color = ['#aaa'];
                         data[i].itemStyle = {"borderColor": '#bbb'};
                     }
                     for ( j in data[i].children) {         
@@ -81,20 +63,17 @@
                 }
             }else{
                 //pz=20 可调返回数据量
-                //console.log(data[19].value);
+
                 for( i in data){
                     data[i].value[0] = data[data.length - 1].value[0] - data[i].value[0];
                     if (data[i].value[1] >0){
                         data[i].value[2] = 1; 
-                        //data[i].color = ['#942e38'];
                         data[i].itemStyle = {"borderColor": '#CC3333'};
                     }else if(data[i].value[1] <0){
                         data[i].value[2] = -1;
-                        //data[i].color = ['#269f3c'];
                         data[i].itemStyle = {"borderColor":  '#339933'};
                     }else{
                         data[i].value[2] = 0;
-                        //data[i].color = ['#aaa'];
                         data[i].itemStyle = {"borderColor": '#bbb'};
                     }
                     for (j in data[i].children) {         
@@ -111,7 +90,6 @@
                 }
             }
             return data;
-            //return  JSON.parse('[{"name":"test","value":1,"children":'+JSON.stringify( data)+'}]');
         },       
         /**
          * 获取行业数据
@@ -122,11 +100,7 @@
             echarts.dispose(document.getElementById('myEchart'));
             var myEcharts = echarts.init(document.getElementById('myEchart'));
             const res = await reqGetIndustryData({kind:this.kind,sort:this.sort});
-            console.log(res);
-            //return res;
             let promises = res.data.diff.map((item, index) => {
-                //console.log(item.f12);
-                //let info = {};
                 return this.getIndustryInfoData(item, index, this.kind, this.sort);
             });       
                    
@@ -135,9 +109,9 @@
             
                 //正序的时候也有负值
                 //if(sort != 'asc') allData = sortData(allData);
-                //console.log(allData);
+                
                 allData = this.sortData(allData,this.sort);
-                //console.log(allData);
+            
                 
                 myEcharts.setOption(
                     {
@@ -208,7 +182,6 @@
             }
 
             var json = await reqGetIndustryInfoData({industryCode:info.f12,kind:kind,sort:sort});
-            console.log(json);
             for(var item in json.data.diff){
                   json.data.diff[item].name = json.data.diff[item].f14;
                   if (kind != 'fluctuate') {

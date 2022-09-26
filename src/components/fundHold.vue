@@ -24,6 +24,7 @@
 <script>
   import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundTradeGetByICode} from '@/apis/fund';
   import * as echarts from 'echarts';
+  import { isOperation } from '@/units/common';
 
   const columns = [
     /*
@@ -72,21 +73,7 @@
         dataIndex: 'op',
         key:'action',
     }];
-  function isOperation(){
-      var today = new Date();
-      
-      var day = today.getDay();
-      if ( day == 0 || day == 6 )
-        return false;      
-      var hour = today.getHours();
-      var minute = today.getMinutes();
-      var time = hour * 100 + minute;
-      if ( ( time > 920 && time < 1135 ) || ( time > 1255 && time < 1505 ) ) {
-        return true;
-      }
-
-      return false;
-  }
+  
   export default {
     setup(){
       return {
@@ -136,7 +123,6 @@
           var x_Axis=[],y_data=[];
           for ( var data in response.Data.LSJZList){               
               let datas = response.Data.LSJZList[data];
-              //console.log(typeof(temp_string));
               x_Axis.push(datas.FSRQ);                
               y_data.push(datas.DWJZ);					
           }
@@ -217,12 +203,11 @@
     },
     mounted(){
         this.getRecord();
-        this.timer = setInterval(()=>{
-            if(isOperation())
-            {
-                this.getFundsGz();
-            }                
-        },30000); 
+        if(isOperation()){
+          this.timer = setInterval(()=>{
+            this.getFundsGz();
+          },30000); 
+        }          
     },
     beforeUnmount(){
         clearInterval(this.timer);

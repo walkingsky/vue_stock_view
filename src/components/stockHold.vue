@@ -51,8 +51,7 @@
 <script>
 import * as echarts from 'echarts';
 import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
-//import { usePagination } from 'vue-request';
-//import axios from 'axios';
+import { isOperation } from '@/units/common';
 
 const columns = [{
         title: '证券名称',
@@ -127,7 +126,8 @@ export  default ({
         };
     },
     beforeUnmount(){
-        clearInterval(this.timer);
+        if(this.timer != null)
+            clearInterval(this.timer);
     },
     methods:{
         /**
@@ -136,7 +136,6 @@ export  default ({
         async getTableData(){
             this.loading = true;
             const res = await reqGetHoldStocks({history:'0'});
-            //console.log(res.data);
             this.data = res.data;
             this.loading = false;
         },
@@ -176,7 +175,6 @@ export  default ({
             this.showKChart = true;            
             const res = await reqGetStockDataHistory({code:record.code,market:record.market});
             const res2 = await reqGetStockHistory({code:record.code,market:record.market});
-            //console.log(res);
             this.drawEchartsHistory(res,res2.results);
         },
         /**
@@ -363,8 +361,6 @@ export  default ({
         //刷新 实时图的option
         reSetTimeChart(){
             if(this.showTimeChart ){
-
-                console.log(this.yAxisMaxAuto);
                 let option = this.myChart.getOption();
                 let preClose = option.series[0].markLine.data[0].yAxis;
                 if(this.yAxisMaxAuto === false){
@@ -406,7 +402,6 @@ export  default ({
             const downColor = '#00da3c';
             const downBorderColor = '#008F28';
 
-            //console.log(response);
             let categoryData = [];
             let values = [];
             let volumes = [];
@@ -416,11 +411,8 @@ export  default ({
             let pointmark = [];
             var position_his = 0;
             for (var item in response.data.klines) {
-                //console.log(response.data.klines[item]);
                 var datas = response.data.klines[item].split(',');
-                //console.log(datas);
                 categoryData.push(datas[0]);
-                //var jiaoyi = false;
                 var buy_num = 0;
                 var sell_num = 0;
                 var position_num = 0;
@@ -430,12 +422,9 @@ export  default ({
 
                         if (rawData[i].sell_buy == '买入') {
                             buy_num += rawData[i].num;
-                            //position_his += buy_num;
                         } else {
                             sell_num += rawData[i].num;
-                            //position_his -= sell_num;
                         }
-                        //console.log(rawData[i].sell_buy);
                     }
                     pointmark.push({
                         name: 'Mark',
@@ -505,16 +494,6 @@ export  default ({
                     ],
                     label: {
                         backgroundColor: '#777'
-                    }
-                },
-                toolbox: {
-                    feature: {
-                        dataZoom: {
-                            yAxisIndex: false
-                        },
-                        brush: {
-                            type: ['lineX', 'clear']
-                        }
                     }
                 },
                 brush: {
@@ -685,22 +664,23 @@ export  default ({
                     }
                 ]
             };
-            //console.log(option);
             echarts.dispose(document.getElementById('kChart'));
             var myKChart = echarts.init(document.getElementById('kChart'));
             myKChart.setOption(option,true);
         },
     },
-    mounted(){
-        //this.drawEtharts();  
+    mounted(){  
         this.getTableData(); 
         
-        this.timer = setInterval(()=>{
-            if(this.showTimeChart === true && this.currentCode != '' && this.currentMarket !='')
-            {
-                this.getStockDataEast(this.currentCode,this.currentMarket,false);
-            }                
-        },10000);     
+        if (isOperation()){
+            this.timer = setInterval(()=>{
+                if(this.showTimeChart === true && this.currentCode != '' && this.currentMarket !='')
+                {
+                    this.getStockDataEast(this.currentCode,this.currentMarket,false);
+                }                
+            },10000); 
+        }
+            
     },
     data(){
         return{
@@ -716,7 +696,6 @@ export  default ({
             currentCode:'',
             currentMarket:'',
             timer:null,
-            myChart:null,
             yAxisMaxAuto:true,
         }
     }

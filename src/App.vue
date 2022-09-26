@@ -87,9 +87,7 @@ export default defineComponent({
     };
   },
   methods: {
-    menuSelect( {key} ){      
-      console.log(key)
-      //component.component = routes[key].component
+    menuSelect( {key} ){ 
       this.currentMain = this.mainComponents[key]
     },
   }

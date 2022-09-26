@@ -199,7 +199,6 @@ export default {
                 this.data = res.data;
             }else{
                 let res = await reqFundTradeGetById(id);
-                console.log(res);
             }
             this.loading = false;
         },
@@ -213,14 +212,12 @@ export default {
         edit(id){
             this.editableData[id] = cloneDeep(this.data.filter(item => id === item.id)[0]);
             this.editableData[id]['tradedate'] = dayjs(this.editableData[id]['tradedate'], this.dateFormat);
-            //console.log(this.editableData);
             this.currentId = id;
         },
         async save(record){
             //校验数据
 
-            //console.log(record);
-            //console.log(this.editableData[record.id]);
+            
             let recordData = {
                 id: parseInt( record.id),
                 name: record.name,
@@ -233,7 +230,6 @@ export default {
                 amount:this.editableData[record.id].amount,
                 returned:this.editableData[record.id].returned,
             };
-            console.log(recordData);
             if(this.data.filter(item => record.id === item.id)[0].new === true)
                 var res = await reqFundTradeAdd(recordData);
             else
