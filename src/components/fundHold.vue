@@ -222,7 +222,7 @@
             {
                 this.getFundsGz();
             }                
-        },20000); 
+        },30000); 
     },
     beforeUnmount(){
         clearInterval(this.timer);
