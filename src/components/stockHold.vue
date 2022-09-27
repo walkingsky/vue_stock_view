@@ -1,6 +1,26 @@
 <template>
-    <div id="timeChart" ref="timeChart" style="width:100%;height:450px" v-if="showTimeChart" ></div>
-    <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>    
+    <a-row type="flex">
+        <a-col flex="auto">
+            <div id="timeChart" ref="timeChart" style="width:100%;height:450px" v-if="showTimeChart" ></div>
+            <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>
+        </a-col>
+        <a-col flex="120px" v-if="showTimeChart || showKChart">
+            <a-table
+                size="small"
+                :data-source="data" 
+                :columns="columnsRadio"
+                :scroll="{ y: (showTimeChart && showKChart)?900:450 }"
+                :pagination="false"            
+            >
+            <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'action'">
+                    <a-typography-link @click.stop="getStockDataEast(record.code,record.market,true)">{{record.name}}</a-typography-link>
+                </template>
+            </template>
+            </a-table>
+        </a-col>
+    </a-row>
+        
     <a-space align="center" style="margin-bottom: 10px">
     自动匹配Y轴范围:
         <a-switch v-model:checked="this.yAxisMaxAuto" @change="reSetTimeChart"></a-switch>
@@ -80,7 +100,15 @@ const columns = [{
         title: '操作',
         key: 'action',
     }];
-
+const columnsRadio = [
+    {
+      
+        title: '证券名称',
+        dataIndex: 'name',
+        key:'action',
+       
+    }
+];
 const innerColumns =[
     {
         title: '日期',
@@ -243,7 +271,8 @@ export  default ({
             var colors = ['#5470C6', '#91CC75', '#EE6666'];
             var option = {
                 title: {
-                    text: response.name
+                    text: response.name,
+                    x: 'center'
                 },
                 animation:false,
                 tooltip: {
@@ -254,13 +283,13 @@ export  default ({
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '65%'
                     },
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         top: '80%',
                         height: '16%'
                     }
@@ -276,7 +305,8 @@ export  default ({
                     }
                 ],
                 legend:{
-                    data:['股价','浮动比','交易量']
+                    data:['股价','浮动比','交易量'],
+                    top:'6%'
                 },                
                 yAxis: [
                     {
@@ -460,12 +490,14 @@ export  default ({
             var option = {
                 title: {
                     text: response.data.name,
+                    x: 'center'
                 },
                 animation: false,
                 legend: {
                     bottom: 10,
                     left: 'center',
-                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30']
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30'],
+                    top:'6%'
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -496,13 +528,6 @@ export  default ({
                         backgroundColor: '#777'
                     }
                 },
-                brush: {
-                    xAxisIndex: 'all',
-                    brushLink: 'all',
-                    outOfBrush: {
-                        colorAlpha: 0.1
-                    }
-                },
                 visualMap: {
                     show: false,
                     seriesIndex: 5,
@@ -520,13 +545,13 @@ export  default ({
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '50%'
                     },
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         top: '63%',
                         height: '16%'
                     }
@@ -697,6 +722,7 @@ export  default ({
             currentMarket:'',
             timer:null,
             yAxisMaxAuto:true,
+            columnsRadio,
         }
     }
     

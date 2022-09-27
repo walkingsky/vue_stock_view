@@ -155,12 +155,14 @@ export default {
             var option = {
                 title: {
                     text: response.data.name,
+                    x: 'center'
                 },
                 animation: false,
                 legend: {
                     bottom: 10,
                     left: 'center',
-                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30']
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30'],
+                    top:'6%'
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -216,8 +218,8 @@ export default {
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '65%'
                     }
                 ],

@@ -14,8 +14,29 @@
     :scroll="{ y: windowHeight }"
     :pagination="false"
     :row-class-name="(_record) => (_record.gzzf <= 0 ? 'row-green':'row-red')"
-  >      
+  >
+    <template #bodyCell="{ column }">
+        <template v-if="column.key === 'action'">
+                <a-typography-link @click="showTransactions()">详细交易</a-typography-link>            
+        </template>
+    </template>      
   </a-table>
+  <a-drawer
+    v-model:visible="visible"
+    class="custom-class"
+    style="color: red"
+    title="详细交易记录"
+    placement="right"
+    @close="visible=false"
+  >
+    <a-timeline >
+      <template v-for="(item,key) in transactions" :key="key">
+        <a-timeline-item v-if="item.type == '买入' || item.type == '转入'" color="green">{{item.tradedate}} {{item.type}} 份额：{{item.shares}} 价值：{{item.amount}} 退回金额：{{item.returned}}</a-timeline-item>
+        <a-timeline-item v-if="item.type == '卖出' || item.type == '转出'" color="blue">{{item.tradedate}} {{item.type}} 份额：{{item.shares}} 价值：{{item.amount}} 退回金额：{{item.returned}}</a-timeline-item>
+        <a-timeline-item v-if="item.type == '分红'" color="red">{{item.tradedate}} {{item.type}} 价值：{{item.amount}} </a-timeline-item>
+      </template>
+    </a-timeline>
+  </a-drawer>
 </template>
 <script>
   import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundTradeGetByICode} from '@/apis/fund';
@@ -64,7 +85,11 @@
                 return text.text + '%'
             }
         },
-    }]
+    },{
+        title:'操作',
+        key:'action'
+    }
+  ]
   
   export default {
     setup(){
@@ -133,7 +158,8 @@
           var colors = ['#5470C6', '#91CC75', '#EE6666'];
           var option = {
               title: {
-                  text: name
+                  text: name,
+                  x: 'center'
               },
               animation:false,
               tooltip: {
@@ -144,8 +170,8 @@
               },
               grid: [
                   {
-                      left: '10%',
-                      right: '8%',
+                      left: '3%',
+                      right: '3%',
                       height: '80%'
                   }
               ],
@@ -156,7 +182,8 @@
                   }
               ],
               legend:{
-                  data:['单位净值']
+                  data:['单位净值'],
+                  top:'6%'
               },
                            
               yAxis: [
@@ -202,6 +229,7 @@
         var res = await reqFundLsjz({code:record.code,size:300});
         var his = await reqFundTradeGetByICode({code:record.code});
         this.drawEcharts(res,record.name,his.data);
+        this.transactions = his.data;
 
       },
       /**
@@ -223,8 +251,17 @@
           }          
         }
       },
+      /**
+       * 展示详细历史交易记录
+       */
+      showTransactions(){
+        this.visible = true;
+      },
     },
     computed:{
+      /**
+       * 行选择
+       */
       rowSelection(){
         return {
           selectedRowKeys: this.selectedRowKeys,
@@ -245,6 +282,7 @@
         }          
     },
     beforeUnmount(){
+        //释放定时器
         clearInterval(this.timer);
     },
     data(){
@@ -256,6 +294,8 @@
         showChart:false,
         windowHeight: document.documentElement.clientHeight - 160 -(this.showChart===true?450:0),
         selectedRowKeys:[],
+        visible:false,
+        transactions:[],
       }
     }
 
