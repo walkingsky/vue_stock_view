@@ -1,6 +1,6 @@
 <template>
     <a-table 
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -61,6 +61,7 @@
 
         <template #expandedRowRender>
             <a-table 
+                size="small"
                 :columns="innerColumns" 
                 :data-source="innerData" 
                 :pagination="false"
@@ -200,7 +201,6 @@ export  default ({
         async getTableData(){
             this.loading = true;
             const res = await reqGetHoldStocks({history:'1'});
-            console.log(res);
             this.data = res.data;
             this.loading = false;
         },
@@ -259,8 +259,5 @@ export  default ({
     .highlight {
       background-color: rgb(255, 192, 105);
       padding: 0px;
-    }
-    .ant-table-my :deep( .ant-table-tbody > tr > td ) {
-        padding: 6px 2px;
     }
 </style>

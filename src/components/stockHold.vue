@@ -1,8 +1,33 @@
 <template>
-    <div id="timeChart" ref="timeChart" style="width: 100%;height:450px" v-if="showTimeChart"></div>
-    <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>
+    <a-row type="flex">
+        <a-col flex="auto">
+            <div id="timeChart" ref="timeChart" style="width:100%;height:450px" v-if="showTimeChart" ></div>
+            <div id="kChart" ref="kChart" style="width: 100%;height:450px" v-if="showKChart"></div>
+        </a-col>
+        <a-col flex="120px" v-if="showTimeChart || showKChart">
+            <a-table
+                size="small"
+                :data-source="data" 
+                :columns="columnsRadio"
+                :scroll="{ y: (showTimeChart && showKChart)?900:450 }"
+                :pagination="false"            
+            >
+            <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'action'">
+                    <a-typography-link @click.stop="getStockDataEast(record.code,record.market,true)">{{record.name}}</a-typography-link>
+                </template>
+            </template>
+            </a-table>
+        </a-col>
+    </a-row>
+        
+    <a-space align="center" style="margin-bottom: 10px">
+    自动匹配Y轴范围:
+        <a-switch v-model:checked="this.yAxisMaxAuto" @change="reSetTimeChart"></a-switch>
+        <a-button @click="this.showKChart=false">关闭历史行情</a-button>
+    </a-space>
     <a-table
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -14,7 +39,7 @@
      >
         <template #expandedRowRender>
             <a-table 
-                class="ant-table-sub"
+                size="small"
                 :columns="innerColumns" 
                 :data-source="innerData" 
                 :pagination="false"
@@ -26,12 +51,12 @@
         </template>
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
-            <span>
-                <a-typography-link @click.stop="showHistory(record,true)">历史行情</a-typography-link>
-            <a-divider type="vertical" />
-                <a-typography-link @click.stop="this.showKChart = false">关闭历史行情</a-typography-link>
-            </span>
-      </template>
+                <span>
+                    <a-typography-link @click=";">分时行情</a-typography-link>
+                <a-divider type="vertical" />
+                    <a-typography-link @click.stop="showHistory(record,true)">历史行情</a-typography-link>
+                </span>
+            </template>
         </template>        
     </a-table>    
 </template>
@@ -45,9 +70,8 @@
 </style>
 <script>
 import * as echarts from 'echarts';
-import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockByCode,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
-//import { usePagination } from 'vue-request';
-//import axios from 'axios';
+import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
+import { isOperation } from '@/units/common';
 
 const columns = [{
         title: '证券名称',
@@ -76,7 +100,15 @@ const columns = [{
         title: '操作',
         key: 'action',
     }];
-
+const columnsRadio = [
+    {
+      
+        title: '证券名称',
+        dataIndex: 'name',
+        key:'action',
+       
+    }
+];
 const innerColumns =[
     {
         title: '日期',
@@ -122,7 +154,8 @@ export  default ({
         };
     },
     beforeUnmount(){
-        clearInterval(this.timer);
+        if(this.timer != null)
+            clearInterval(this.timer);
     },
     methods:{
         /**
@@ -130,8 +163,7 @@ export  default ({
          */
         async getTableData(){
             this.loading = true;
-            const res = await reqGetHoldStocks();
-            //console.log(res.data);
+            const res = await reqGetHoldStocks({history:'0'});
             this.data = res.data;
             this.loading = false;
         },
@@ -147,26 +179,12 @@ export  default ({
             this.innerData = res.data;
         },
         /**
-         * 126 实时数据
-         * @params {code} 6位股票代码
-         * @params {market} 市场
-         */
-         async getStockData126 (code,market){
-            
-            const res = await reqGetStockByCode({code:code,market:market});
-            //console.log(res );
-            this.drawEcharts(res);
-        },
-        /**
          * 东财实时数据
          * @params {code} 6位股票代码
          * @params {market} 市场
          */
-         async getStockDataEast (code,market,refrashKChart){
-            
-            this.showTimeChart = true;
-            const res = await reqGetStockByCodeEast({code:code,market:market});
-            //console.log(res );            
+         async getStockDataEast (code,market,refrashKChart){   
+            const res = await reqGetStockByCodeEast({code:code,market:market});           
             this.drawEchartsEast(res.data);
             if(this.showKChart && refrashKChart === true)
                 this.showHistory({code:code,market:market},false);
@@ -176,11 +194,15 @@ export  default ({
          */
         async showHistory(record,refreshTimeChart=false){
             if (refreshTimeChart == true)
+            {
                 this.getStockDataEast(record.code,record.market,true);
+                this.currentCode = record.code;
+                this.currentMarket = record.market;
+            }
+                
             this.showKChart = true;            
             const res = await reqGetStockDataHistory({code:record.code,market:record.market});
             const res2 = await reqGetStockHistory({code:record.code,market:record.market});
-            //console.log(res);
             this.drawEchartsHistory(res,res2.results);
         },
         /**
@@ -211,171 +233,20 @@ export  default ({
          */
         clickRow(record){
             return {
-                onClick:()=> {                   
-                    //console.log(record);
-                    //this.getStockData126(record.code,record.market);
+                onClick:()=> {
+                    this.showTimeChart = true;
+                    //等渲染完成后执行
+                    this.$nextTick(function () {
+                        if(this.myChart==null)
+                            this.myChart = echarts.init(document.getElementById("timeChart"));
+                    });
                     this.getStockDataEast(record.code,record.market,true);
                     this.currentCode = record.code;
                     this.currentMarket = record.market;
                 }
             }
         },
-        /**
-         * 绘制echarts 行情曲线图,126数据
-         */
-        drawEcharts(response){
-            let y_data_chigu=[];
-            let markPointData = [
-                {type:'max',name:'最高'},
-                {type:'min',name:'最低'}];
-            echarts.dispose(document.getElementById('timeChart'));
-            let myChart = echarts.init(document.getElementById("timeChart"));
-            var x_Axis=[],y_data=[],i=0,y_data_bili=[];
-            for ( var data in response.data){               
-                let temp_string = response.data[data][0];
-                //console.log(typeof(temp_string));
-                x_Axis.push(temp_string.substr(0, 2)+':'+temp_string.substr(2));                
-                y_data.push(response.data[data][1]);
-                y_data_bili.push(((response.data[data][1]-response.yestclose)/response.yestclose*100).toFixed(2));
-                i ++;						
-            }
-            while(i<242){
-                x_Axis.push("");
-                i++;
-            }
-            var colors = ['#5470C6', '#91CC75', '#EE6666'];
-            var option = {
-                title: {
-                    text: response.name
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'cross'
-                    }
-                },
-                grid: [
-                    {
-                        left: '5%',
-                        right: '20%',
-                        //bottom: 20
-                    },
-                    {
-                        left: '85%',
-                        right: '5%',
-                        //height: 80,
-                        //bottom: 10
-                    }
-                ],
-                xAxis: [
-                    {
-                        data: x_Axis
-                    },
-                    {
-                        scale:true,
-                        //type:'value',
-                        gridIndex:1,
-                        //data:y_data_chigu
-                        data:['持有','买入','卖出']
-                        
-                    }
-                ],
-                legend:{
-                    data:['股价','浮动比','持股数量']
-                },
-                toolbox: {
-                    show: true,
-                    feature: {
-                        dataZoom: {
-                            yAxisIndex: 'none'
-                        },
-                        magicType: {type: ['line', 'bar']},
-                        restore: {},
-                        saveAsImage: {}
-                    }
-                },                
-                yAxis: [
-                    {
-                        type:'value',
-                        scale:true,
-                        name:"股价",
-                        axisLine: {
-                            show: true,
-                            lineStyle: {
-                                color: colors[0]
-                            }
-                        },
-                        axisLabel: {
-                            formatter: '{value} 元'
-                        }
-                    },
-                    {
-                        type:'value',
-                        scale:true,
-                        name:"浮动比",
-                        axisLine: {
-                            show: true,
-                            lineStyle: {
-                                color: colors[0]
-                            }
-                        },
-                        axisLabel: {
-                            formatter: '{value}%'
-                        }
-                    },
-                    {
-                        //type:'category',
-                        type:'value',								
-                        name:"持股数量",
-                        //offset: 60,
-                        gridIndex:1,
-                        axisLine: {
-                            show: true,
-                            lineStyle: {
-                                color: colors[0]
-                            }
-                        },
-                        
-                    }
-                ],
-                series: [
-                    {
-                        name: '股价',
-                        smooth: 0.2,
-                        type: 'line',
-                        data: y_data,
-                        markLine:{
-                            data:[
-                                //{ type:"max",coord:[1,response.yestclose]  ,name:"昨日收盘"}
-                                { yAxis:response.yestclose  ,name:"昨日收盘"}
-                            ]
-                        },
-                        markPoint:{
-                            symbol: "pin",
-                            data:markPointData
-                        }
-                    },
-                    {
-                        name: '浮动比',								
-                        type: 'bar',
-                        yAxisIndex:1,
-                        xAxisIndex:0,
-                        data: y_data_bili								
-                    },
-                    {
-                        name: '持股数量',								
-                        type: 'bar',
-                        yAxisIndex:2,
-                        xAxisIndex:1,
-                        //data: ['持有','买入','卖出']	
-                        data:y_data_chigu							
-                    }
-                ]
-            };
-            // 使用刚指定的配置项和数据显示图表。
-            myChart.setOption(option);
-        },
-
+        
         /**
          * 绘制echarts 行情曲线图,东财数据
          */
@@ -383,12 +254,10 @@ export  default ({
             let markPointData = [
                 {type:'max',name:'最高'},
                 {type:'min',name:'最低'}];
-            echarts.dispose(document.getElementById('timeChart'));
-            let myChart = echarts.init(document.getElementById("timeChart"));
+            
             var x_Axis=[],y_data=[],i=0,y_data_bili=[],volumes=[];
             for ( var data in response.trends){               
                 let datas = response.trends[data].split(',');
-                //console.log(typeof(temp_string));
                 x_Axis.push(datas[0]);                
                 y_data.push(datas[2]);
                 y_data_bili.push(((datas[2]-response.preClose)/response.preClose*100).toFixed(2));
@@ -402,7 +271,8 @@ export  default ({
             var colors = ['#5470C6', '#91CC75', '#EE6666'];
             var option = {
                 title: {
-                    text: response.name
+                    text: response.name,
+                    x: 'center'
                 },
                 animation:false,
                 tooltip: {
@@ -413,13 +283,13 @@ export  default ({
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '65%'
                     },
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         top: '80%',
                         height: '16%'
                     }
@@ -435,18 +305,8 @@ export  default ({
                     }
                 ],
                 legend:{
-                    data:['股价','浮动比','交易量']
-                },
-                toolbox: {
-                    show: true,
-                    feature: {
-                        dataZoom: {
-                            yAxisIndex: 'none'
-                        },
-                        magicType: {type: ['line', 'bar']},
-                        restore: {},
-                        saveAsImage: {}
-                    }
+                    data:['股价','浮动比','交易量'],
+                    top:'6%'
                 },                
                 yAxis: [
                     {
@@ -493,7 +353,6 @@ export  default ({
                         data: y_data,
                         markLine:{
                             data:[
-                                //{ type:"max",coord:[1,response.yestclose]  ,name:"昨日收盘"}
                                 { yAxis:response.preClose  ,name:"昨日收盘"}
                             ]
                         },
@@ -520,9 +379,35 @@ export  default ({
                 ]
             };
             // 使用刚指定的配置项和数据显示图表。
-            myChart.setOption(option);
+            if(this.yAxisMaxAuto === false){
+                option.yAxis[0].max = response.preClose*1.1;
+                option.yAxis[0].min = response.preClose*0.9;
+                option.yAxis[1].max = 10;
+                option.yAxis[1].min = -10;
+            }
+            this.myChart.clear();
+            this.myChart.setOption(option,true);
         },
-
+        //刷新 实时图的option
+        reSetTimeChart(){
+            if(this.showTimeChart ){
+                let option = this.myChart.getOption();
+                let preClose = option.series[0].markLine.data[0].yAxis;
+                if(this.yAxisMaxAuto === false){
+                    option.yAxis[0].max = preClose*1.1;
+                    option.yAxis[0].min = preClose*0.9;
+                    option.yAxis[1].max = 10;
+                    option.yAxis[1].min = -10;
+                } else{
+                    delete option.yAxis[0].max;
+                    delete option.yAxis[0].min;
+                    delete option.yAxis[1].max;
+                    delete option.yAxis[1].min;
+                }
+                this.myChart.clear();
+                this.myChart.setOption(option,true);
+            }            
+        },
         calculateMA(dayCount, data) {
             var result = [];
             for (var i = 0, len = data.values.length; i < len; i++) {
@@ -547,7 +432,6 @@ export  default ({
             const downColor = '#00da3c';
             const downBorderColor = '#008F28';
 
-            //console.log(response);
             let categoryData = [];
             let values = [];
             let volumes = [];
@@ -557,11 +441,8 @@ export  default ({
             let pointmark = [];
             var position_his = 0;
             for (var item in response.data.klines) {
-                //console.log(response.data.klines[item]);
                 var datas = response.data.klines[item].split(',');
-                //console.log(datas);
                 categoryData.push(datas[0]);
-                //var jiaoyi = false;
                 var buy_num = 0;
                 var sell_num = 0;
                 var position_num = 0;
@@ -571,12 +452,9 @@ export  default ({
 
                         if (rawData[i].sell_buy == '买入') {
                             buy_num += rawData[i].num;
-                            //position_his += buy_num;
                         } else {
                             sell_num += rawData[i].num;
-                            //position_his -= sell_num;
                         }
-                        //console.log(rawData[i].sell_buy);
                     }
                     pointmark.push({
                         name: 'Mark',
@@ -612,12 +490,14 @@ export  default ({
             var option = {
                 title: {
                     text: response.data.name,
+                    x: 'center'
                 },
                 animation: false,
                 legend: {
                     bottom: 10,
                     left: 'center',
-                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30']
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30'],
+                    top:'6%'
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -648,23 +528,6 @@ export  default ({
                         backgroundColor: '#777'
                     }
                 },
-                toolbox: {
-                    feature: {
-                        dataZoom: {
-                            yAxisIndex: false
-                        },
-                        brush: {
-                            type: ['lineX', 'clear']
-                        }
-                    }
-                },
-                brush: {
-                    xAxisIndex: 'all',
-                    brushLink: 'all',
-                    outOfBrush: {
-                        colorAlpha: 0.1
-                    }
-                },
                 visualMap: {
                     show: false,
                     seriesIndex: 5,
@@ -682,13 +545,13 @@ export  default ({
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '50%'
                     },
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         top: '63%',
                         height: '16%'
                     }
@@ -826,21 +689,23 @@ export  default ({
                     }
                 ]
             };
-            //console.log(option);
             echarts.dispose(document.getElementById('kChart'));
-            var myChart = echarts.init(document.getElementById('kChart'));
-            myChart.setOption(option);
+            var myKChart = echarts.init(document.getElementById('kChart'));
+            myKChart.setOption(option,true);
         },
     },
-    mounted(){
-        //this.drawEtharts();  
+    mounted(){  
         this.getTableData(); 
-        this.timer = setInterval(()=>{
-            if(this.showTimeChart === true && this.currentCode != '' && this.currentMarket !='')
-            {
-                this.getStockDataEast(this.currentCode,this.currentMarket,false);
-            }                
-        },10000);     
+        
+        if (isOperation()){
+            this.timer = setInterval(()=>{
+                if(this.showTimeChart === true && this.currentCode != '' && this.currentMarket !='')
+                {
+                    this.getStockDataEast(this.currentCode,this.currentMarket,false);
+                }                
+            },10000); 
+        }
+            
     },
     data(){
         return{
@@ -856,17 +721,12 @@ export  default ({
             currentCode:'',
             currentMarket:'',
             timer:null,
+            yAxisMaxAuto:true,
+            columnsRadio,
         }
     }
     
 });
 </script>
-<style scoped>
-.ant-table-my :deep( .ant-table-tbody > tr > td ) {
-    padding: 6px 2px;
-}
-.ant-table-sub :deep( .ant-table-tbody > tr > td ) {
-    padding: 6px 8px;
-}
-</style>
+
 

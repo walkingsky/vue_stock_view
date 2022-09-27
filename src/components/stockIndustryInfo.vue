@@ -8,7 +8,7 @@
         </a-radio-group>
     </a-space>
     <a-table 
-        class="ant-table-my" 
+        size="small"
         :data-source="data" 
         :columns="columns"        
         :loading="loading"
@@ -28,9 +28,6 @@
     </a-table>
 </template>
 <style scoped>
-    .ant-table-my :deep( .ant-table-tbody > tr > td ) {
-        padding: 6px 16px;
-    }
 </style>
 <script>
 import { reqGetIndustryData,reqGetIndustryHistoryData} from '@/apis/stock';
@@ -124,9 +121,7 @@ export default {
         },
         clickRow(record){
             return {
-                onClick:()=> {                   
-                    //console.log(record.f12);
-                    //console.log(index);
+                onClick:()=> {     
                     this.getIndustryHistoryData(record.f12);
                 }
             }
@@ -140,16 +135,12 @@ export default {
             const downColor = '#00da3c';
             const downBorderColor = '#008F28';
 
-            //console.log(response);
             let categoryData = [];
             let values = [];
             let volumes = [];
             for (var item in response.data.klines) {
-                //console.log(response.data.klines[item]);
                 var datas = response.data.klines[item].split(',');
-                //console.log(datas);
-                categoryData.push(datas[0]);
-                //var jiaoyi = false;                
+                categoryData.push(datas[0]);              
 
                 values.push([parseFloat(datas[1]), parseFloat(datas[2]), parseFloat(datas[3]), parseFloat(datas[4])]);
                 volumes.push(datas[0]);
@@ -164,12 +155,14 @@ export default {
             var option = {
                 title: {
                     text: response.data.name,
+                    x: 'center'
                 },
                 animation: false,
                 legend: {
                     bottom: 10,
                     left: 'center',
-                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30']
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30'],
+                    top:'6%'
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -201,16 +194,6 @@ export default {
                         backgroundColor: '#777'
                     }
                 },
-                toolbox: {
-                    feature: {
-                        dataZoom: {
-                            yAxisIndex: false
-                        },
-                        brush: {
-                            type: ['lineX', 'clear']
-                        }
-                    }
-                },
                 brush: {
                     xAxisIndex: 'all',
                     brushLink: 'all',
@@ -235,8 +218,8 @@ export default {
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
+                        left: '3%',
+                        right: '3%',
                         height: '65%'
                     }
                 ],
@@ -348,7 +331,6 @@ export default {
                     }
                 ]
             };
-            //console.log(option);
             echarts.dispose(document.getElementById('myEchart'));
             var myChart = echarts.init(document.getElementById('myEchart'));
             myChart.setOption(option);
@@ -358,7 +340,6 @@ export default {
          */
          async getIndustryHistoryData(code){
             var res = await reqGetIndustryHistoryData({industryCode:code});
-            //console.log(res.data);
             this.drawEcharts(res);
          },
         /**
@@ -367,7 +348,6 @@ export default {
         async getIndustryData(){
             this.loading = true;
             const res = await reqGetIndustryData({kind:this.kind,sort:this.sort,pz:100});
-            //console.log(res.data);
             this.data = res.data.diff;
             this.loading = false;
         },
