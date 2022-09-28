@@ -136,7 +136,6 @@
         dataIndex: 'gzzf',
         sorter: (a,b)=>a.gzzf-b.gzzf,
         defaultSortOrder:'descend',
-        sortOrder:true,
         customRender:(text)=>{
             if (text.text != null && text.text != '--') {
                 return text.text + '%'
