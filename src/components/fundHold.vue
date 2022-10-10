@@ -1,7 +1,8 @@
 <template>
   <div id="timeChart" ref="timeChart" style="width: 100%;height:450px" v-if="showChart"></div>
   <a-space align="end">
-    <a-button @click="closeHistory()">关闭历史行情</a-button>    
+    <a-button @click="closeHistory()">关闭历史行情</a-button>     
+    <a-button @click="handleAdd">添加持仓记录</a-button>   
   </a-space>
   <a-table
     size="small"
@@ -15,9 +16,63 @@
     :pagination="false"
     :row-class-name="(_record) => (_record.gzzf <= 0 ? 'row-green':'row-red')"
   >
-    <template #bodyCell="{ column }">
+      <template #bodyCell="{ column,text,record }"> 
+        <template v-if="[ 'shares','costprice'].includes(column.dataIndex)">
+            <div>
+            <a-input-number
+                v-if="editableData[record.id]"
+                v-model:value="editableData[record.id][column.dataIndex]"
+                :controls=false
+            />
+            <template v-else>
+                {{ text }}
+            </template>
+            </div>
+        </template>   
+        <template v-if="['code'].includes(column.dataIndex)">
+            <div>
+                <a-auto-complete
+                    v-if="editableData[record.id]"
+                    v-model:value="editableData[record.id][column.dataIndex]"
+                    style="margin: -5px 0;width:100%"
+                    :options="optionDatas"
+                    :dropdown-match-select-width="500"
+                    @select="onSelect"
+                    @search="onSearch"
+                >
+                <template #option="item">
+                    <div style="display: flex; justify-content: space-between">
+                    <span>                       
+                        {{ item.NAME }}                       
+                    </span>
+                    <span>{{ item.CODE }}</span>
+                    </div>
+                </template>
+                </a-auto-complete>
+                <template v-else>
+                    {{ text }}
+                </template>
+                </div>
+        </template>        
         <template v-if="column.key === 'action'">
-                <a-typography-link @click="showTransactions()">详细交易</a-typography-link>            
+                  
+                <span v-if="editableData[record.id]">
+                        <a-typography-link @click.stop="save(record)">保存</a-typography-link>
+                        <a-divider type="vertical" />
+                        <a-typography-link @click.stop="cancel(record.id)">取消</a-typography-link>                       
+                </span> 
+                <span v-else>
+                  <a-typography-link @click="showTransactions()">详细交易</a-typography-link>  
+                  <a-divider type="vertical" />
+                  <a-popconfirm
+                      v-if="data.length"
+                      title="确认删除?"
+                      @confirm="onDelete(record.code)"
+                      @click.stop=""
+                      >
+                          <a>删除记录</a>
+                  </a-popconfirm> 
+                </span>      
         </template>
     </template>      
   </a-table>
@@ -39,12 +94,14 @@
   </a-drawer>
 </template>
 <script>
-  import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundTradeGetByICode} from '@/apis/fund';
+  import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundSuggest,reqFundTradeGetByICode,reqFundHoldDelByCode,reqFundHoldAdd} from '@/apis/fund';
   import * as echarts from 'echarts';
-  import { isOperation } from '@/units/common';
+  import { message } from 'ant-design-vue';
+  import { isOperation } from '@/utils/common';
+  import { cloneDeep } from 'lodash-es';
 
   const columns = [
-    /*
+    
     {
         title: 'id',
         dataIndex: 'id',
@@ -52,7 +109,7 @@
         defaultSortOrder:'ascend',
         width:60,
         key:'id',
-    },*/
+    },
     {
         title: '基金名称',
         dataIndex: 'name',
@@ -79,7 +136,6 @@
         dataIndex: 'gzzf',
         sorter: (a,b)=>a.gzzf-b.gzzf,
         defaultSortOrder:'descend',
-        sortOrder:true,
         customRender:(text)=>{
             if (text.text != null && text.text != '--') {
                 return text.text + '%'
@@ -113,7 +169,9 @@
        */
       async getFundsGz(){
         var codes = '';
-        for(var da in this.data){         
+        for(var da in this.data){ 
+          if (this.data[da]['code'] =='')
+            continue;        
           codes += this.data[da]['code'] +',';
         }
         codes = codes.substring(0, codes.length - 1);
@@ -233,6 +291,90 @@
 
       },
       /**
+       * 添充表格数据，从而实现表格添加行
+       */
+      handleAdd(){
+          var newData = {
+              id: `${this.countA}`,
+              name:'',
+              code: '',             
+              shares:0,
+              costprice:0,
+              new:true,
+          };
+          this.data.push(newData);
+          this.editableData[newData.id] = cloneDeep(this.data.filter(item => newData.id === item.id)[0]);
+          this.currentId = newData.id;
+      },
+      /**
+       * 保存新行数据
+       */
+      async save(record){
+          //校验数据
+          let recordData = {
+              //id: parseInt( record.id),
+              name: record.name,
+              code: this.editableData[record.id].code,  
+              shares: this.editableData[record.id].shares,           
+              costprice:this.editableData[record.id].costprice,              
+          };
+          if(this.data.filter(item => record.id === item.id)[0].new === true)
+              var res = await reqFundHoldAdd(recordData);
+          else
+              return
+          if(res.success === true)
+          {
+              message.success('保存成功');
+              delete this.editableData[record.id];
+              this.currentId = null;
+              this.getRecord();
+          }else{
+              message.error('保存出错，请重试');
+          }
+      },
+      /**
+       * 退出行的编辑状态
+       */
+      cancel(id){
+          delete this.editableData[id];
+          this.currentId = null;
+      },
+      /**
+       * 自动完成输入的选择确认动作
+       */
+      onSelect(value,option){
+          for (let i in this.data){
+              if(this.data[i].id == this.currentId){
+                  this.data[i].name = option.NAME;
+                  break;
+              }                    
+          }
+      },
+      /**
+       * 自动完成后台搜索
+       */
+      async onSearch(searchText){
+          let res = await reqFundSuggest({key:searchText});
+          for(let i in res.Datas){
+              res.Datas[i].value = res.Datas[i].CODE;
+          }
+          this.optionDatas = res.Datas;
+
+      },
+      /**
+       * 删除按照code提交后台删除
+       */
+      async onDelete(code){
+        let res = await reqFundHoldDelByCode({code:code});
+        if(res.success === true)
+        {
+            this.getRecord();
+            message.success('删除成功');
+        }else{
+            message.error('删除出错');
+        }
+      },
+      /**
        * 关闭历史曲线图
        */
       closeHistory(){
@@ -246,6 +388,8 @@
       customRow(record){
         return{
           onClick:()=>{
+            if(record.code ==='')
+              return;
             this.selectedRowKeys[0] = record.code;
             this.showHistory(record);
           }          
@@ -269,9 +413,26 @@
             this.selectedRowKeys = selectedRowKeys; 
             this.showHistory({code:selectedRowKeys[0]});           
           },
+          getCheckboxProps:(record)=>{
+            if(this.currentId != null && record.id == this.currentId){
+              return {disabled:true};
+            }else{
+              return null;
+            }
+          },
           type:'radio',
         };
       },
+      /**
+       * 计数新增数据id
+       */
+       countA(){
+          if(this.data.length == 0)
+                  return 1 ;
+          let c = this.data;
+          let a = c.sort((a,b) => {return b.id-a.id })[0];
+          return parseInt(a.id)  + 1 ;
+       },
     },
     mounted(){
         this.getRecord();
@@ -296,6 +457,9 @@
         selectedRowKeys:[],
         visible:false,
         transactions:[],
+        editableData:{},
+        optionDatas:[],
+        currentId:null,
       }
     }
 

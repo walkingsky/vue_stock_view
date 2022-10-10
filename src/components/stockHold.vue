@@ -14,7 +14,7 @@
             >
             <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'action'">
-                    <a-typography-link @click.stop="getStockDataEast(record.code,record.market,true)">{{record.name}}</a-typography-link>
+                    <a-typography-link @click.stop="getStockDataEast(record.code,record.market,true);currentCode = record.code;currentMarket = record.market;">{{record.name}}</a-typography-link>
                 </template>
             </template>
             </a-table>
@@ -71,7 +71,7 @@
 <script>
 import * as echarts from 'echarts';
 import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
-import { isOperation } from '@/units/common';
+import { isOperation } from '@/utils/common';
 
 const columns = [{
         title: '证券名称',

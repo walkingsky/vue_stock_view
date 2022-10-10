@@ -14,7 +14,7 @@
         :loading="loading"
         :pagination=false
         :customRow="clickRow"
-        :scroll="{ y:`calc(100vh - 500px)` }"
+        :scroll="{ y:`calc(100vh - 530px)` }"
      >    
         <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
@@ -192,13 +192,6 @@ export default {
                     ],
                     label: {
                         backgroundColor: '#777'
-                    }
-                },
-                brush: {
-                    xAxisIndex: 'all',
-                    brushLink: 'all',
-                    outOfBrush: {
-                        colorAlpha: 0.1
                     }
                 },
                 visualMap: {

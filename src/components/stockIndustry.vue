@@ -99,7 +99,7 @@
             const myKind = this.kind;
             echarts.dispose(document.getElementById('myEchart'));
             var myEcharts = echarts.init(document.getElementById('myEchart'));
-            const res = await reqGetIndustryData({kind:this.kind,sort:this.sort});
+            const res = await reqGetIndustryData({kind:this.kind,sort:this.sort,pz:10});
             let promises = res.data.diff.map((item, index) => {
                 return this.getIndustryInfoData(item, index, this.kind, this.sort);
             });       

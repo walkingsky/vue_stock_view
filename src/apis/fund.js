@@ -17,3 +17,5 @@ export const reqFundTradeDelById = params => { return http.delete('/fund/trade/d
 export const reqFundHoldGetAll = () => { return http.get('/fund/hold/getall') }
 export const reqFundGz = params => { return http.get('/fund/hold/gz', params) }
 export const reqFundLsjz = params => { return http.get('/fund/hold/lsjz', params) }
+export const reqFundHoldDelByCode = params => { return http.delete('/fund/hold/del', params) }
+export const reqFundHoldAdd = params => { return http.post('/fund/hold/add', params) }

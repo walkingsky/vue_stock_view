@@ -149,7 +149,8 @@ const columns = [
         sorter: (a,b)=>a.code-b.code,
     }, {
         title: '交易日期',
-        dataIndex: 'tradedate',        
+        dataIndex: 'tradedate',
+        defaultSortOrder:'descend',       
         sorter: (a,b)=>{
             let aTime = new Date(a.tradedate).getTime();
             let bTime = new Date(b.tradedate).getTime();
