@@ -97,7 +97,7 @@
   import {reqFundHoldGetAll,reqFundGz,reqFundLsjz,reqFundSuggest,reqFundTradeGetByICode,reqFundHoldDelByCode,reqFundHoldAdd} from '@/apis/fund';
   import * as echarts from 'echarts';
   import { message } from 'ant-design-vue';
-  import { isOperation } from '@/units/common';
+  import { isOperation } from '@/utils/common';
   import { cloneDeep } from 'lodash-es';
 
   const columns = [

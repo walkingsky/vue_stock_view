@@ -71,7 +71,7 @@
 <script>
 import * as echarts from 'echarts';
 import { reqGetHoldStocks ,reqGetStockHistory,reqGetStockDataHistory,reqGetStockByCodeEast} from '@/apis/stock';
-import { isOperation } from '@/units/common';
+import { isOperation } from '@/utils/common';
 
 const columns = [{
         title: '证券名称',

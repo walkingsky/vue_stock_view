@@ -1,7 +1,7 @@
 import axios from 'axios'
 import Qs from 'qs'
 import Vue from 'vue'
-import { getToken } from '@Utils/session' // 存储获取token文件
+import { getToken } from '@/utils/session' // 存储获取token文件
 import address from './address' // 请求地址
 
 class Request {
@@ -19,7 +19,7 @@ class Request {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json; charset=UTF-8',
                     'Access-Control-Allow-Origin': '*',
-                    'Authorization': getToken() // 请求头统一添加token
+                    'Authorization': 'Bearer ' + getToken() // 请求头统一添加token
                 }
                 config.headers = Object.assign(config.headers, requestHeader)
                 return config
@@ -203,7 +203,8 @@ class Request {
             errorMsg = '请求出错！'
         }
         // 进行通知
-        Vue.prototype.$message.error(errorMsg)
+        //Vue.prototype.$message.error(errorMsg)
+        console.log(errorMsg);
     }
 }
 
