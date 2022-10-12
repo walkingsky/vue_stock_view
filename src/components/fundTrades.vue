@@ -134,7 +134,6 @@ const columns = [
         title: 'id',
         dataIndex: 'id',
         sorter: (a,b)=>a.id-b.id,
-        defaultSortOrder:'ascend',
         width:60,
         key:'id',
     },{
@@ -245,6 +244,12 @@ export default {
         },
         cancel(id){
             delete this.editableData[id];
+            for (let i in this.data){
+                if(this.data[i].id == id){
+                    delete this.data[i];
+                    break;
+                }                    
+            }
             this.currentId = null;
         },
         async onDelete(id){

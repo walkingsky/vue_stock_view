@@ -106,7 +106,6 @@
         title: 'id',
         dataIndex: 'id',
         sorter: (a,b)=>a.id-b.id,
-        defaultSortOrder:'ascend',
         width:60,
         key:'id',
     },
