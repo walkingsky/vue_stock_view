@@ -3,6 +3,7 @@ import Qs from 'qs'
 import Vue from 'vue'
 import { getToken } from '@/utils/session' // 存储获取token文件
 import address from './address' // 请求地址
+import router from '@/route';
 
 class Request {
     constructor() {
@@ -199,6 +200,7 @@ class Request {
             errorMsg = '请求地址错误！'
         } else if (statusCode === 401) {
             errorMsg = '当前您没有权限操作该数据！'
+            router.push('/login')
         } else {
             errorMsg = '请求出错！'
         }
