@@ -20,11 +20,55 @@
             </a-table>
         </a-col>
     </a-row>
-        
+    <div v-if="calculator.show" style="width:100%;height:100px">
+        <div >
+            <a-row style="width:100%" align="bottom">
+                <a-col :span="6">
+                    买入价格：<a-slider v-model:value="calculator.buy.value" :min="calculator.buy.min" :max="calculator.buy.max" :step="0.001"/>
+                </a-col>
+                <a-col :span="2">
+                    <a-input-number v-model:value="calculator.buy.value" :min="calculator.buy.min" :max="calculator.buy.max" style="margin-left: 16px" :step="0.001"/>
+                </a-col>
+                <a-col :span="6">
+                    份额基数：
+                    <a-input-number v-model:value="calculator.base" :step="10" :min="10" :max="10000" />
+                </a-col>
+            </a-row>
+        </div>
+        <div>
+            <a-row style="width:100%" align="bottom">
+                <a-col :span="6">
+                    卖出价格：<a-slider v-model:value="calculator.sell.value" :min="calculator.sell.min" :max="calculator.sell.max" :step="0.001"/>
+                </a-col>
+                <a-col :span="2">
+                    <a-input-number v-model:value="calculator.sell.value" :min="calculator.sell.min" :max="calculator.sell.max" style="margin-left: 16px" :step="0.001"/>
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base}}股:{{calculate(calculator.base)}}
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base*2}}股:{{calculate(calculator.base*2)}}
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base*3}}股:{{calculate(calculator.base*3)}}
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base*4}}股:{{calculate(calculator.base*4)}}
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base*5}}股:{{calculate(calculator.base*5)}}
+                </a-col>
+                <a-col :span="2">
+                    {{calculator.base*6}}股:{{calculate(calculator.base*6)}}
+                </a-col>
+            </a-row>
+        </div>
+    </div>        
     <a-space align="center" style="margin-bottom: 10px">
     自动匹配Y轴范围:
         <a-switch v-model:checked="this.yAxisMaxAuto" @change="reSetTimeChart"></a-switch>
         <a-button @click="this.showKChart=false">关闭历史行情</a-button>
+        打开收益计算器 <a-switch size="small" v-model:checked="calculator.show" @change="openCalculator"/>
     </a-space>
     <a-table
         size="small"
@@ -45,6 +89,7 @@
                 :pagination="false"
                 :loading="innerLoading"
                 :scroll="{ y: 300 }"
+                :customRow="subTableclickRow"
                 :row-class-name="(_record, index) => (_record.sell_buy =='买入' ? 'table-buy' : 'table-sell')"
             >
             </a-table>        
@@ -206,6 +251,17 @@ export  default ({
             this.drawEchartsHistory(res,res2.results);
         },
         /**
+         * 计算收益
+         * @param {int} shares 卖出份额数
+         */
+        calculate(shares){
+            return ((this.calculator.sell.value - this.calculator.buy.value)*shares - this.calculator.buy.value*shares*0.01 -this.calculator.sell.value*shares*0.00025).toFixed(2);
+        },
+        openCalculator(){
+            if(this.calculate.show)
+                this.calculate.getValue=true;
+        },
+        /**
          * 展开一个节点，关闭其他展开节点
          * @param {*} expanded 
          * @param {*} record 
@@ -240,13 +296,37 @@ export  default ({
                         if(this.myChart==null)
                             this.myChart = echarts.init(document.getElementById("timeChart"));
                     });
+    
                     this.getStockDataEast(record.code,record.market,true);
                     this.currentCode = record.code;
                     this.currentMarket = record.market;
                 }
             }
         },
-        
+        /**
+         * 子表点击行操作
+         */
+        subTableclickRow(record){
+            return{
+                onClick:()=>{
+                    if(this.calculator.show){
+                        if(record.sell_buy == '买入'){
+                            this.calculator.buy.min = record.price*0.8;
+                            this.calculator.buy.max = record.price*1.2;
+                            this.calculator.base = record.num;
+                            this.calculator.buy.value = record.price;
+                        }
+                    }
+                    this.getStockDataEast(record.code,record.market,true);
+                    this.currentCode = record.code;
+                    this.currentMarket = record.market;
+                }
+            }
+        },  
+        //保留n位小数
+        roundFun(value, n) {
+        return Math.round(value*Math.pow(10,n))/Math.pow(10,n);
+        },      
         /**
          * 绘制echarts 行情曲线图,东财数据
          */
@@ -254,16 +334,28 @@ export  default ({
             let markPointData = [
                 {type:'max',name:'最高'},
                 {type:'min',name:'最低'}];
-            
+            if(this.calculator.show){
+                this.calculator.buy.min = this.roundFun(response.preClose*0.8,3);
+                this.calculator.buy.max = this.roundFun(response.preClose*1.2,3);
+                
+                this.calculator.sell.min = this.roundFun(response.preClose*0.8,3);
+                this.calculator.sell.max = this.roundFun(response.preClose*1.2,3);
+                
+                this.calculator_buy = response.preClose;
+                this.calculator_sell = response.preClose;
+            }
             var x_Axis=[],y_data=[],i=0,y_data_bili=[],volumes=[];
             for ( var data in response.trends){               
                 let datas = response.trends[data].split(',');
                 x_Axis.push(datas[0]);                
-                y_data.push(datas[2]);
+                y_data.push(datas[2]); 
+                if(i == response.trends.length -1 )               
+                    this.calculator.sell.value = parseFloat(datas[2]);
                 y_data_bili.push(((datas[2]-response.preClose)/response.preClose*100).toFixed(2));
                 volumes.push([i, datas[5], datas[1] > datas[2] ? 1 : -1]);
                 i ++;						
             }
+            
             while(i<242){
                 x_Axis.push("");
                 i++;
@@ -723,6 +815,21 @@ export  default ({
             timer:null,
             yAxisMaxAuto:true,
             columnsRadio,
+            //收益计算器
+            calculator:{
+                show:false,
+                sell:{
+                    value:1,
+                    min:0,
+                    max:2,
+                },
+                buy:{
+                    value:1,
+                    min:0,
+                    max:2,
+                },
+                base:100,
+            },
         }
     }
     
