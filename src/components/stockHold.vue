@@ -188,6 +188,11 @@ const innerColumns =[
         dataIndex: 'num',
         sorter: (a,b)=>a.num-b.num,
     },
+    {
+        title: '成交金额',
+        dataIndex: 'vol',
+        sorter: (a,b)=>a.num-b.num,
+    },
 ];
 
 export  default ({
@@ -442,6 +447,7 @@ export  default ({
                         name: '股价',
                         smooth: 0.2,
                         type: 'line',
+                        symbol:'none',
                         data: y_data,
                         markLine:{
                             data:[
@@ -531,6 +537,8 @@ export  default ({
             let sell = [];
             let position = [];
             let pointmark = [];
+            let buy_prices = [];
+            let sell_prices = [];
             var position_his = 0;
             for (var item in response.data.klines) {
                 var datas = response.data.klines[item].split(',');
@@ -540,11 +548,14 @@ export  default ({
                 var position_num = 0;
 
                 for (var i in rawData) {
+                    
                     if (rawData[i].date == datas[0]) {
 
                         if (rawData[i].sell_buy == '买入') {
-                            buy_num += rawData[i].num;
+                            buy_prices.push([rawData[i].date,rawData[i].price]);
+                            buy_num += rawData[i].num; 
                         } else {
+                            sell_prices.push([rawData[i].date,rawData[i].price]);
                             sell_num += rawData[i].num;
                         }
                     }
@@ -554,6 +565,13 @@ export  default ({
                         value: rawData[i].num,
                         itemStyle: {
                             color: rawData[i].sell_buy == '买入' ? 'rgb(41,60,85)' : 'rgb(220,10,10)'
+                        },
+                        symbol: "rect",
+                        symbolRotate: 180,
+                        symbolSize: 5,
+                        label: {
+                        show: true,
+                        position: rawData[i].sell_buy == '买入' ? "top":"bottom",
                         }
                     });
                 }
@@ -577,7 +595,9 @@ export  default ({
                 volumes,
                 buy: buy,
                 sell: sell,
-                position: position
+                position: position,
+                sell_prices:sell_prices,
+                buy_prices:buy_prices,
             }
             var option = {
                 title: {
@@ -588,7 +608,7 @@ export  default ({
                 legend: {
                     bottom: 10,
                     left: 'center',
-                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30'],
+                    data: ['K值数据', 'MA5', 'MA10', 'MA20', 'MA30','买入价格','卖出价格'],
                     top:'6%'
                 },
                 tooltip: {
@@ -710,6 +730,7 @@ export  default ({
                     }
                 ],
                 series: [
+                    
                     {
                         name: 'K值数据',
                         type: 'candlestick',
@@ -720,10 +741,35 @@ export  default ({
                             borderColor: upBorderColor,
                             borderColor0: downBorderColor
                         },
+                        //markPoint:{
+                        //    data:pointmark,
+                        //},
+                    },
+                    {
+                        name: '买入价格',
+                        type: 'scatter',
+                        symbol:'pin',
+                        zlevel:100,
+                        data: data.buy_prices,
+                        itmeStyle: {
+                            opacity: 1
+                        }
+                    },
+                    {
+                        name: '卖出价格',
+                        type: 'scatter',
+                        symbol:'pin',
+                        zlevel:101,
+                        symbolRotate:180,
+                        data: data.sell_prices,
+                        itmeStyle: {
+                            opacity: 1
+                        }
                     },
                     {
                         name: 'MA5',
                         type: 'line',
+                        symbol:'none',
                         data: this.calculateMA(5, data),
                         smooth: false,
                         lineStyle: {
@@ -733,6 +779,7 @@ export  default ({
                     {
                         name: 'MA10',
                         type: 'line',
+                        symbol:'none',
                         data: this.calculateMA(10, data),
                         smooth: true,
                         lineStyle: {
@@ -742,6 +789,7 @@ export  default ({
                     {
                         name: 'MA20',
                         type: 'line',
+                        symbol:'none',
                         data: this.calculateMA(20, data),
                         smooth: true,
                         lineStyle: {
@@ -751,6 +799,7 @@ export  default ({
                     {
                         name: 'MA30',
                         type: 'line',
+                        symbol:'none',
                         data: this.calculateMA(30, data),
                         smooth: true,
                         lineStyle: {
@@ -775,6 +824,7 @@ export  default ({
                     {
                         name: '持仓',
                         type: 'line',
+                        symbol:'none',
                         xAxisIndex: 1,
                         yAxisIndex: 1,
                         data: data.position
